@@ -1,0 +1,5 @@
+CORSOrigins = ["*"]
+DefaultResolution = 4096
+DefaultBuffer = 64
+MaxFeaturesPerTile = 50000
+Debug = false

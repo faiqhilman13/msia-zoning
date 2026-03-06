@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    container_name: malaysia-permits-map-db
+    environment:
+      POSTGRES_DB: permits
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - permits-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d permits"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  tiles:
+    image: pramsey/pg_tileserv:latest
+    container_name: malaysia-permits-map-tiles
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${PGTILESERV_DATABASE_URL}
+      TS_HTTPPORT: 7800
+    ports:
+      - "7800:7800"
+    volumes:
+      - ./infra/tiles:/config:ro
+
+  web:
+    build:
+      context: ./app/web
+      dockerfile: Dockerfile
+    container_name: malaysia-permits-map-web
+    depends_on:
+      db:
+        condition: service_healthy
+      tiles:
+        condition: service_started
+    environment:
+      APP_ENV: ${APP_ENV}
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/permits
+      NEXT_PUBLIC_MAP_STYLE_URL: ${NEXT_PUBLIC_MAP_STYLE_URL}
+      NEXT_PUBLIC_PGTILESERV_URL: ${NEXT_PUBLIC_PGTILESERV_URL}
+      NEXT_PUBLIC_DEFAULT_LAT: ${NEXT_PUBLIC_DEFAULT_LAT}
+      NEXT_PUBLIC_DEFAULT_LON: ${NEXT_PUBLIC_DEFAULT_LON}
+      NEXT_PUBLIC_DEFAULT_ZOOM: ${NEXT_PUBLIC_DEFAULT_ZOOM}
+    ports:
+      - "${WEB_PORT:-3001}:3000"
+
+volumes:
+  permits-db-data:

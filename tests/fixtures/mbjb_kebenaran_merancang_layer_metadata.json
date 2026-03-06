@@ -1,0 +1,8 @@
+{
+  "name": "KebenaranMerancang",
+  "geometryType": "esriGeometryPolygon",
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedExportFormats": "sqlite,filegdb,shapefile,csv,geojson",
+  "maxRecordCount": 1000,
+  "objectIdField": "OBJECTID"
+}
