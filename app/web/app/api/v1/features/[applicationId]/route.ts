@@ -14,12 +14,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
       `
       SELECT
         f.application_id,
+        f.source_municipality,
         f.reference_no,
         f.reference_no_alt,
         f.public_display_title,
         f.public_display_status,
         f.layer_type,
         f.application_type,
+        f.has_geometry,
         f.application_year,
         f.approval_year,
         f.lot_no,
@@ -32,7 +34,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
         f.area_m2,
         f.centroid_lon,
         f.centroid_lat
-      FROM marts.mbjb_public_features f
+      FROM marts.public_applications f
       WHERE f.application_id = $1
       `,
       [applicationId]
@@ -46,12 +48,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return NextResponse.json({
       kind: "application",
       applicationId: row.application_id,
+      municipality: row.source_municipality,
       referenceNo: row.reference_no,
       referenceNoAlt: row.reference_no_alt,
       title: row.public_display_title,
       status: row.public_display_status,
       layerType: row.layer_type,
       applicationType: row.application_type,
+      hasGeometry: row.has_geometry,
       applicationYear: row.application_year,
       approvalYear: row.approval_year,
       lotNo: row.lot_no,
@@ -60,10 +64,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
       zoningName: row.zoning_name,
       developerName: row.developer_name,
       consultantName: row.consultant_name,
-      areaAcres: Number(row.area_acres),
-      areaM2: Number(row.area_m2),
-      centroidLon: Number(row.centroid_lon),
-      centroidLat: Number(row.centroid_lat)
+      areaAcres: row.area_acres == null ? null : Number(row.area_acres),
+      areaM2: row.area_m2 == null ? null : Number(row.area_m2),
+      centroidLon: row.centroid_lon == null ? null : Number(row.centroid_lon),
+      centroidLat: row.centroid_lat == null ? null : Number(row.centroid_lat)
     });
   } finally {
     client.release();

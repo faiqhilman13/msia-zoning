@@ -2,9 +2,9 @@
 
 ## Canonical identifiers
 
-- `source_system` - source namespace, currently `mbjb_geojb`
+- `source_system` - source namespace, currently `mbjb_geojb` or `mbpj_smartdev`
 - `source_layer` - source layer slug such as `kebenaran_merancang`
-- `source_object_id` - ArcGIS object ID
+- `source_object_id` - stable source record identifier (ArcGIS object ID for MBJB, deterministic natural-key hash for MBPJ)
 - `application_id` - deterministic UUID5 derived from the natural key
 
 ## Core public fields
@@ -24,10 +24,10 @@
 | `zoning_name` | planning block/zoning name from context layers when available |
 | `developer_name` | developer name when available |
 | `consultant_name` | consultant name when available |
-| `area_m2` | polygon area in square meters |
-| `area_acres` | polygon area in acres |
-| `centroid` | representative point for search and map interactions |
-| `geometry` | source polygon geometry, normalized to `MultiPolygon` |
+| `area_m2` | polygon area in square meters when geometry exists |
+| `area_acres` | polygon area in acres when geometry exists |
+| `centroid` | representative point for search and map interactions when geometry exists |
+| `geometry` | source polygon geometry, normalized to `MultiPolygon` when available |
 
 ## Internal-only raw fields
 
@@ -49,7 +49,14 @@ These are retained for lineage and operational QA but are not intended for publi
 
 ## Public serving view
 
-The frontend and tile server use `marts.mbjb_public_features`.
+Cross-municipality public-safe records are exposed through `marts.public_applications`.
+
+The current map-enabled tile view still uses `marts.mbjb_public_features`.
+
+`marts.public_applications` includes both geometry-backed and text-first rows:
+
+- `has_geometry = true` for MBJB map-enabled records
+- `has_geometry = false` for MBPJ text-first records
 
 Public context overlays use:
 

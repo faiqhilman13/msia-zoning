@@ -2,13 +2,14 @@
 
 import { useDeferredValue, useEffect, useState } from "react";
 
-import type { SearchResult } from "@/lib/types";
+import type { MunicipalityCode, SearchResult } from "@/lib/types";
 
 type Props = {
+  municipality: MunicipalityCode;
   onSelect: (result: SearchResult) => void;
 };
 
-export function SearchBox({ onSelect }: Props) {
+export function SearchBox({ municipality, onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,9 +30,11 @@ export function SearchBox({ onSelect }: Props) {
     const timeout = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/v1/search?q=${encodeURIComponent(deferredQuery)}`, {
-          signal: controller.signal
+        const params = new URLSearchParams({
+          q: deferredQuery,
+          municipality
         });
+        const response = await fetch(`/api/v1/search?${params.toString()}`, { signal: controller.signal });
         const payload = (await response.json()) as SearchResult[];
         if (controller.signal.aborted) {
           return;
@@ -62,8 +65,12 @@ export function SearchBox({ onSelect }: Props) {
       <div>
         <p className="eyebrow">Search</p>
         <input
-          aria-label="Search MBJB files"
-          placeholder="Reference no, title, lot, mukim, planning block"
+          aria-label={`Search ${municipality} files`}
+          placeholder={
+            municipality === "MBPJ"
+              ? "Reference no, title, lot, mukim"
+              : "Reference no, title, lot, mukim, planning block"
+          }
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -89,7 +96,7 @@ export function SearchBox({ onSelect }: Props) {
               <strong>{result.referenceNo ?? result.title}</strong>
               <span className="result-meta">{result.title}</span>
               <span className="result-meta">
-                {result.layerType.replaceAll("_", " ")} | {result.status}
+                {result.municipality} | {result.layerType.replaceAll("_", " ")} | {result.status}
               </span>
             </button>
           ))}

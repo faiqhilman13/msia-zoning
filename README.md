@@ -1,8 +1,11 @@
 # Malaysia Permits Map
 
-MBJB-first public development map for Malaysia.
+Municipal development data stack for Malaysia.
 
-The current MVP ships a real local stack for **Majlis Bandaraya Johor Bahru (MBJB)** using public **GeoJB** ArcGIS REST data, PostGIS, `pg_tileserv`, and a Next.js frontend with MapLibre and deck.gl.
+The current local stack ships:
+
+- a map-enabled **Majlis Bandaraya Johor Bahru (MBJB)** implementation using public **GeoJB** ArcGIS REST polygons
+- a **Majlis Bandaraya Petaling Jaya (MBPJ)** implementation that combines the public **SmartDev** approved-project register with MBPJ ArcGIS context geometry
 
 ## What is implemented
 
@@ -12,6 +15,8 @@ The current MVP ships a real local stack for **Majlis Bandaraya Johor Bahru (MBJ
   - `KerjaTanah` (`MaklumatPembangunan/4`)
 - Immutable raw snapshots under `data/raw/mbjb/<run>/`
 - Normalized GeoParquet stage outputs under `data/stage/mbjb/<run>/`
+- Immutable raw MBPJ HTML snapshots under `data/raw/mbpj/<run>/`
+- Normalized MBPJ stage outputs under `data/stage/mbpj/<run>/`, including SmartDev project rows plus context geometry Parquet files
 - PostGIS schemas: `meta`, `raw`, `stage`, `core`, `marts`
 - Vector tiles from `pg_tileserv`
 - Next.js public map with:
@@ -25,6 +30,7 @@ The current MVP ships a real local stack for **Majlis Bandaraya Johor Bahru (MBJ
   - source page
 - Conservative public-field allowlist that does **not** expose `PEMILIK` in the UI
 - QA checks for counts, required fields, geometry validity, extent checks, and known references
+- MBPJ API/search/stats support with SmartDev project geometry kept nullable while MBPJ context layers render official buildings and the municipality boundary
 
 ## Stack
 
@@ -63,16 +69,26 @@ docker compose up -d --build db tiles web
 .\.venv\Scripts\python.exe scripts\publish\load_postgis.py
 ```
 
-5. Run QA:
+5. Run the MBPJ pipeline:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\ingest\run_mbpj_pipeline.py --run-label mbpj_context_geometry
+.\.venv\Scripts\python.exe scripts\publish\load_mbpj_postgis.py
+.\.venv\Scripts\python.exe scripts\qa\run_mbpj_qa.py
+```
+
+6. Run MBJB QA:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\qa\run_mbjb_qa.py
 ```
 
-6. Open the app:
+7. Open the app:
 
 - Web app: `http://localhost:3001`
 - Tile index: `http://localhost:7800/index.json`
+- MBPJ stats API: `http://localhost:3001/api/v1/stats/overview?municipality=MBPJ`
+- MBPJ search API: `http://localhost:3001/api/v1/search?q=damansara&municipality=MBPJ`
 
 ## Common commands
 
@@ -92,6 +108,12 @@ Load a specific stage run:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\publish\load_postgis.py --stage-root data\stage\mbjb\<run_name>
+```
+
+Load a specific MBPJ stage run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\publish\load_mbpj_postgis.py --stage-root data\stage\mbpj\<run_name>
 ```
 
 ## Repo layout
@@ -115,6 +137,9 @@ Load a specific stage run:
   - `PelanBangunan`: `618`
   - `KebenaranMerancang`: `310`
   - `KerjaTanah`: `190`
+- MBPJ currently exposes a public homepage table with `62` approved-project rows.
+- MBPJ also exposes a public ArcGIS service with `57` official-building polygons and `1` municipality boundary polygon for context rendering.
+- MBPJ SmartDev rows remain text-first because those ArcGIS layers are not direct project polygons.
 
 ## Public data handling
 
@@ -126,5 +151,6 @@ Load a specific stage run:
 
 - [Local stack runbook](./docs/runbooks/local-stack.md)
 - [MBJB pipeline runbook](./docs/runbooks/mbjb-pipeline.md)
+- [MBPJ pipeline runbook](./docs/runbooks/mbpj-pipeline.md)
 - [Data dictionary](./docs/data-dictionary.md)
 - [Source attribution and licensing notes](./docs/source-attribution.md)

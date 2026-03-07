@@ -17,9 +17,9 @@ const serifFont = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "MBJB Development Map",
+  title: "Malaysia Permits Map",
   description:
-    "Public-facing MBJB municipal development map built from GeoJB permit polygons."
+    "Municipal development data stack for MBJB map-enabled polygons and MBPJ text-first project register support."
 };
 
 export default function RootLayout({

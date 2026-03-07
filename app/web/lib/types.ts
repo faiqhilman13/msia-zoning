@@ -1,4 +1,10 @@
-export type LayerType = "kebenaran_merancang" | "pelan_bangunan" | "kerja_tanah";
+export type MunicipalityCode = "MBJB" | "MBPJ";
+
+export type LayerType =
+  | "kebenaran_merancang"
+  | "pelan_bangunan"
+  | "kerja_tanah"
+  | "approved_project_register";
 
 export type Filters = {
   layerTypes: LayerType[];
@@ -30,19 +36,23 @@ export type DistributionRow = {
 
 export type SearchResult = {
   applicationId: string;
+  municipality: MunicipalityCode;
+  hasGeometry: boolean;
   referenceNo: string | null;
   title: string;
   layerType: string;
   status: string;
   planningBlock: string | null;
   mukim: string | null;
-  centroidLon: number;
-  centroidLat: number;
+  centroidLon: number | null;
+  centroidLat: number | null;
 };
 
 export type ApplicationDetail = {
   kind: "application";
   applicationId: string;
+  municipality: MunicipalityCode;
+  hasGeometry: boolean;
   referenceNo: string | null;
   referenceNoAlt: string | null;
   title: string;
@@ -57,10 +67,10 @@ export type ApplicationDetail = {
   zoningName: string | null;
   developerName: string | null;
   consultantName: string | null;
-  areaAcres: number;
-  areaM2: number;
-  centroidLon: number;
-  centroidLat: number;
+  areaAcres: number | null;
+  areaM2: number | null;
+  centroidLon: number | null;
+  centroidLat: number | null;
 };
 
 export type PlanningBlockPoint = {

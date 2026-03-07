@@ -11,6 +11,13 @@ function renderValue(value: string | number | null | undefined) {
   return value;
 }
 
+function renderArea(acres: number | null, m2: number | null) {
+  if (acres == null || m2 == null) {
+    return "-";
+  }
+  return `${acres.toFixed(2)} ac / ${m2.toFixed(0)} m2`;
+}
+
 export function DetailDrawer({ detail }: Props) {
   const layerBreakdown =
     detail?.kind === "planning_block"
@@ -28,6 +35,10 @@ export function DetailDrawer({ detail }: Props) {
             <h2>{detail.title}</h2>
             <p className={`status status-${detail.status}`}>{detail.status}</p>
             <div className="detail-list">
+              <div>
+                <span>Municipality</span>
+                <strong>{detail.municipality}</strong>
+              </div>
               <div>
                 <span>Reference</span>
                 <strong>{renderValue(detail.referenceNo)}</strong>
@@ -66,9 +77,11 @@ export function DetailDrawer({ detail }: Props) {
               </div>
               <div>
                 <span>Area</span>
-                <strong>
-                  {detail.areaAcres.toFixed(2)} ac / {detail.areaM2.toFixed(0)} m2
-                </strong>
+                <strong>{renderArea(detail.areaAcres, detail.areaM2)}</strong>
+              </div>
+              <div>
+                <span>Map geometry</span>
+                <strong>{detail.hasGeometry ? "Available" : "Not linked to project row"}</strong>
               </div>
             </div>
           </>
@@ -120,8 +133,7 @@ export function DetailDrawer({ detail }: Props) {
         )
       ) : (
         <p className="muted">
-          Click a development polygon, search result, or planning block dot to inspect the reviewed
-          public attributes.
+          Click a development polygon, search result, or planning block dot to inspect the reviewed public attributes.
         </p>
       )}
     </section>

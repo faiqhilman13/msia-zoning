@@ -2,6 +2,10 @@ import { pool } from "@/lib/db";
 import { buildSqlFilter } from "@/lib/filters";
 import type { Filters } from "@/lib/types";
 
+type QueryOptions = {
+  municipalities?: string[];
+};
+
 const STATUS_ORDER = new Map([
   ["approved", 0],
   ["pending", 1],
@@ -71,21 +75,63 @@ function sortNatural(values: string[]) {
   return [...new Set(values)].sort(compareMixedNatural);
 }
 
-export async function getFilterOptions() {
+function withMunicipalityFilter(
+  whereSql: string,
+  values: Array<string | number | string[] | number[]>,
+  municipalities: string[] | undefined
+) {
+  const clauses = whereSql ? [whereSql.replace(/^WHERE\s+/i, "")] : [];
+  const nextValues = [...values];
+
+  if (municipalities?.length) {
+    clauses.unshift(`source_municipality = ANY($${nextValues.length + 1})`);
+    nextValues.push(municipalities);
+  }
+
+  return {
+    whereSql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "",
+    values: nextValues
+  };
+}
+
+export async function getFilterOptions(options: QueryOptions = {}) {
   const client = await pool.connect();
   try {
+    const municipalities = options.municipalities ?? ["MBJB"];
     const [statuses, years, planningBlocks, mukims] = await Promise.all([
       client.query(
-        `SELECT DISTINCT public_display_status AS value FROM marts.mbjb_public_features WHERE public_display_status IS NOT NULL ORDER BY 1`
+        `SELECT DISTINCT public_display_status AS value
+         FROM marts.public_applications
+         WHERE source_municipality = ANY($1)
+           AND public_display_status IS NOT NULL
+         ORDER BY 1`,
+        [municipalities]
       ),
       client.query(
-        `SELECT DISTINCT COALESCE(approval_year, application_year) AS value FROM marts.mbjb_public_features WHERE COALESCE(approval_year, application_year) IS NOT NULL ORDER BY 1 DESC`
+        `SELECT DISTINCT COALESCE(approval_year, application_year) AS value
+         FROM marts.public_applications
+         WHERE source_municipality = ANY($1)
+           AND COALESCE(approval_year, application_year) IS NOT NULL
+         ORDER BY 1 DESC`,
+        [municipalities]
       ),
       client.query(
-        `SELECT DISTINCT planning_block AS value FROM marts.mbjb_public_features WHERE planning_block IS NOT NULL AND planning_block <> '' ORDER BY 1`
+        `SELECT DISTINCT planning_block AS value
+         FROM marts.public_applications
+         WHERE source_municipality = ANY($1)
+           AND planning_block IS NOT NULL
+           AND planning_block <> ''
+         ORDER BY 1`,
+        [municipalities]
       ),
       client.query(
-        `SELECT DISTINCT mukim AS value FROM marts.mbjb_public_features WHERE mukim IS NOT NULL AND mukim <> '' ORDER BY 1`
+        `SELECT DISTINCT mukim AS value
+         FROM marts.public_applications
+         WHERE source_municipality = ANY($1)
+           AND mukim IS NOT NULL
+           AND mukim <> ''
+         ORDER BY 1`,
+        [municipalities]
       )
     ]);
 
@@ -100,10 +146,11 @@ export async function getFilterOptions() {
   }
 }
 
-export async function getOverview(filters: Filters) {
+export async function getOverview(filters: Filters, options: QueryOptions = {}) {
   const client = await pool.connect();
   try {
-    const { whereSql, values } = buildSqlFilter(filters);
+    const base = buildSqlFilter(filters);
+    const { whereSql, values } = withMunicipalityFilter(base.whereSql, base.values, options.municipalities);
     const result = await client.query(
       `
       SELECT
@@ -111,7 +158,7 @@ export async function getOverview(filters: Filters) {
         count(*) FILTER (WHERE public_display_status = 'approved')::int AS approved_features,
         count(*) FILTER (WHERE public_display_status = 'pending')::int AS pending_features,
         COALESCE(round(sum(area_acres)::numeric, 2), 0) AS total_area_acres
-      FROM marts.mbjb_public_features
+      FROM marts.public_applications
       ${whereSql}
       `,
       values
@@ -124,17 +171,19 @@ export async function getOverview(filters: Filters) {
 
 export async function getDistribution(
   filters: Filters,
-  field: "layer_type" | "public_display_status" | "year"
+  field: "layer_type" | "public_display_status" | "year",
+  options: QueryOptions = {}
 ) {
   const client = await pool.connect();
   try {
-    const { whereSql, values } = buildSqlFilter(filters);
+    const base = buildSqlFilter(filters);
+    const { whereSql, values } = withMunicipalityFilter(base.whereSql, base.values, options.municipalities);
     const selectExpr =
       field === "year" ? "COALESCE(approval_year, application_year)" : field;
     const rows = await client.query(
       `
       SELECT ${selectExpr} AS bucket, count(*)::int AS feature_count
-      FROM marts.mbjb_public_features
+      FROM marts.public_applications
       ${whereSql}
       GROUP BY 1
       ORDER BY 2 DESC, 1

@@ -1,0 +1,9 @@
+{
+  "batch_files": [
+    "batch-0001.geojson"
+  ],
+  "count": 57,
+  "label": "MBPJ Official Buildings",
+  "layer": "official_buildings",
+  "object_id_field": "OBJECTID_12"
+}

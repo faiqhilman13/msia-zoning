@@ -5,6 +5,7 @@ description = "MBJB-first municipal development map for Malaysia."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
+  "beautifulsoup4>=4.13.0",
   "duckdb>=1.4.0",
   "geopandas>=1.1.0",
   "geoalchemy2>=0.17.0",

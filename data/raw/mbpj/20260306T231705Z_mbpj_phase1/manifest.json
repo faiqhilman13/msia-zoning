@@ -1,0 +1,80 @@
+{
+  "artifacts": [
+    {
+      "artifact_type": "html",
+      "file_size_bytes": 131583,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/homepage/response.html",
+      "sha256": "01a583464e18793d091bb3a9c7385708fc3c37ecce1964bc5c822de663031527"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 1846,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/homepage/response-metadata.json",
+      "sha256": "c635eefbc49e3af6ef33025e6d24fd221da447bfab22b68aef7c87bbb3cfb26a"
+    },
+    {
+      "artifact_type": "html",
+      "file_size_bytes": 32755,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/feedback_lookup/response.html",
+      "sha256": "d41d6d49900b8120947ff192f48f4fb001e17070d8984cd05c0c78c785dc8dd3"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 1902,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/feedback_lookup/response-metadata.json",
+      "sha256": "ce730dd80aefe1abec2c65ed667539c1d67ac9fe3a287976cd8f63795da9af4c"
+    },
+    {
+      "artifact_type": "html",
+      "file_size_bytes": 49282,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/terms/response.html",
+      "sha256": "5b42762bbf3f889e1f10f5061563ce3b0bf7f1803af3d10ffe00a8995c40fd11"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 1882,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/terms/response-metadata.json",
+      "sha256": "dd2bc22ac204dd78d0c22c62d96ad8f9fb08615a3399b8a48f41c79f19e28720"
+    },
+    {
+      "artifact_type": "html",
+      "file_size_bytes": 37657,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/disclaimer/response.html",
+      "sha256": "44200ac015ddfbd950b2870cac05d1dc6b08d49b4fe47b9929ba923cfa6293f7"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 1875,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/disclaimer/response-metadata.json",
+      "sha256": "ee2f5a9b95536983f077e7f6717752650461d3d50b8b7fbe2c482df16309223c"
+    },
+    {
+      "artifact_type": "html",
+      "file_size_bytes": 89,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/gis_public_authenticate/response.html",
+      "sha256": "11f0adf7a5108abcf464f224ea8cec2e4d78ebb0e66f8517726ff10bcc7a3de6"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 959,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/gis_public_authenticate/response-metadata.json",
+      "sha256": "14fdb6e87d9826e43e19748b1e268ce8d2225af8b9f27cda68a9a6b67b56e9e4"
+    },
+    {
+      "artifact_type": "json",
+      "file_size_bytes": 270929,
+      "relative_path": "/Users/faiqhilman/Projects/msia-zoning/data/raw/mbpj/20260306T231705Z_mbpj_phase1/approved_project_register/projects-extracted.json",
+      "sha256": "fac5c25f6dc653d9b53ec696f3819b0810f707b2a4755c8e55118d30cbac7a16"
+    }
+  ],
+  "expected_project_count": 62,
+  "geometry_notes": "No trustworthy public MBPJ geometry source was verified during this run.",
+  "geometry_status": "text_first_only",
+  "ingest_run_id": "a1904850-546c-4e50-87f8-ffc01840fcf6",
+  "municipality_code": "MBPJ",
+  "observed_counts": {
+    "approved_project_register": 62
+  },
+  "source_system": "mbpj_smartdev",
+  "started_at": "2026-03-06T23:17:05.336920+00:00"
+}

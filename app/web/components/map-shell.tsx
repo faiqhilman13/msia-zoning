@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { DetailDrawer } from "@/components/detail-drawer";
 import { FiltersPanel } from "@/components/filters-panel";
@@ -8,13 +9,14 @@ import { Legend } from "@/components/legend";
 import { MapCanvas } from "@/components/map-canvas";
 import { SearchBox } from "@/components/search-box";
 import { StatsBar } from "@/components/stats-bar";
-import { DEFAULT_FILTERS } from "@/lib/filters";
+import { getDefaultFilters } from "@/lib/filters";
 import { buildTilesUrl } from "@/lib/map";
 import type {
   FeatureDetail,
   FilterOptions,
   Filters,
   HoverState,
+  MunicipalityCode,
   OverviewStats,
   SearchResult
 } from "@/lib/types";
@@ -30,9 +32,28 @@ type SelectedTarget =
   | { kind: "planning_block"; id: string }
   | null;
 
-function filtersToQuery(filters: Filters) {
+function defaultFocusPoint(municipality: MunicipalityCode) {
+  return municipality === "MBPJ"
+    ? { lon: 101.6237, lat: 3.1073, zoom: 12 }
+    : { lon: 103.7414, lat: 1.4927, zoom: 11 };
+}
+
+function parseSelectedMunicipality(searchParams: { get(name: string): string | null }): MunicipalityCode {
+  return searchParams.get("municipality")?.toUpperCase() === "MBPJ" ? "MBPJ" : "MBJB";
+}
+
+function filtersToQuery(filters: Filters, municipality: MunicipalityCode) {
   const query = new URLSearchParams();
-  filters.layerTypes.forEach((value) => query.append("layer", value));
+  query.set("municipality", municipality);
+
+  const defaultLayerTypes = getDefaultFilters(municipality).layerTypes;
+  const includeLayers =
+    filters.layerTypes.length !== defaultLayerTypes.length ||
+    filters.layerTypes.some((value) => !defaultLayerTypes.includes(value));
+
+  if (includeLayers) {
+    filters.layerTypes.forEach((value) => query.append("layer", value));
+  }
   filters.statuses.forEach((value) => query.append("status", value));
   filters.years.forEach((value) => query.append("year", String(value)));
   filters.planningBlocks.forEach((value) => query.append("planningBlock", value));
@@ -41,8 +62,11 @@ function filtersToQuery(filters: Filters) {
 }
 
 export function MapShell() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const municipality = parseSelectedMunicipality(searchParams);
   const [selectedTarget, setSelectedTarget] = useState<SelectedTarget>(null);
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<Filters>(() => getDefaultFilters(municipality));
   const [options, setOptions] = useState<FilterOptions>({
     statuses: [],
     years: [],
@@ -53,38 +77,45 @@ export function MapShell() {
   const [byLayer, setByLayer] = useState<DistributionRow[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<FeatureDetail | null>(null);
   const [hoverState, setHoverState] = useState<HoverState | null>(null);
-  const [showPlanningBlocks, setShowPlanningBlocks] = useState(true);
+  const [showPrimaryContext, setShowPrimaryContext] = useState(true);
   const [showBoundary, setShowBoundary] = useState(true);
   const [focusPoint, setFocusPoint] = useState<{ lon: number; lat: number; zoom?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setFilters(getDefaultFilters(municipality));
+    setSelectedTarget(null);
+    setSelectedFeature(null);
+    setHoverState(null);
+    setShowPrimaryContext(true);
+    setShowBoundary(true);
+    setFocusPoint(defaultFocusPoint(municipality));
+  }, [municipality]);
+
+  useEffect(() => {
     const controller = new AbortController();
+    const query = new URLSearchParams({ municipality }).toString();
+    setLoading(true);
     startTransition(() => {
-      Promise.all([
-        fetch("/api/v1/metadata/filter-options", { signal: controller.signal }).then((res) => res.json()),
-        fetch("/api/v1/stats/overview", { signal: controller.signal }).then((res) => res.json()),
-        fetch("/api/v1/stats/by-layer", { signal: controller.signal }).then((res) => res.json())
-      ])
-        .then(([filterOptions, overviewStats, layerRows]) => {
+      fetch(`/api/v1/metadata/filter-options?${query}`, { signal: controller.signal })
+        .then((res) => res.json())
+        .then((filterOptions) => {
           setOptions(filterOptions);
-          setOverview(overviewStats);
-          setByLayer(layerRows);
           setError(null);
         })
         .catch(() => {
-          setError("Could not load MBJB metadata or stats.");
+          setError(`Could not load ${municipality} metadata.`);
         })
         .finally(() => setLoading(false));
     });
 
     return () => controller.abort();
-  }, []);
+  }, [municipality]);
 
   useEffect(() => {
     const controller = new AbortController();
-    const query = filtersToQuery(filters);
+    const query = filtersToQuery(filters, municipality);
     const suffix = query ? `?${query}` : "";
     startTransition(() => {
       Promise.all([
@@ -97,11 +128,11 @@ export function MapShell() {
           setError(null);
         })
         .catch(() => {
-          setError("Could not refresh filtered stats.");
+          setError(`Could not refresh ${municipality} stats.`);
         });
     });
     return () => controller.abort();
-  }, [filters]);
+  }, [filters, municipality]);
 
   useEffect(() => {
     if (!selectedTarget) {
@@ -119,11 +150,13 @@ export function MapShell() {
       .then((res) => res.json())
       .then((payload) => {
         setSelectedFeature(payload);
-        setFocusPoint({
-          lon: payload.centroidLon,
-          lat: payload.centroidLat,
-          zoom: payload.kind === "planning_block" ? 13.3 : 15
-        });
+        if (payload.centroidLon != null && payload.centroidLat != null) {
+          setFocusPoint({
+            lon: payload.centroidLon,
+            lat: payload.centroidLat,
+            zoom: payload.kind === "planning_block" ? 13.3 : 15
+          });
+        }
       })
       .catch(() => {
         setSelectedFeature(null);
@@ -132,11 +165,11 @@ export function MapShell() {
     return () => controller.abort();
   }, [selectedTarget]);
 
-  const tilesUrl = buildTilesUrl(filters);
-  const filterQuery = filtersToQuery(filters);
+  const tilesUrl = buildTilesUrl(filters, municipality);
+  const filterQuery = filtersToQuery(filters, municipality);
   const selectedApplicationId = selectedTarget?.kind === "application" ? selectedTarget.id : null;
   const selectedPlanningBlockId =
-    selectedTarget?.kind === "planning_block" ? selectedTarget.id : null;
+    municipality === "MBJB" && selectedTarget?.kind === "planning_block" ? selectedTarget.id : null;
 
   return (
     <main className="app-shell">
@@ -144,17 +177,36 @@ export function MapShell() {
 
       <section className="sidebar-stack">
         <section className="panel search-panel">
+          <div className="municipality-switch">
+            {(["MBJB", "MBPJ"] as MunicipalityCode[]).map((code) => {
+              const active = code === municipality;
+              return (
+                <button
+                  key={code}
+                  className={`chip ${active ? "active" : ""}`}
+                  type="button"
+                  onClick={() => router.replace(`/?municipality=${code}`)}
+                >
+                  {code}
+                </button>
+              );
+            })}
+          </div>
           <SearchBox
+            municipality={municipality}
             onSelect={(result: SearchResult) => {
               setSelectedTarget({ kind: "application", id: result.applicationId });
-              setFocusPoint({ lon: result.centroidLon, lat: result.centroidLat, zoom: 15 });
+              if (result.centroidLon != null && result.centroidLat != null) {
+                setFocusPoint({ lon: result.centroidLon, lat: result.centroidLat, zoom: 15 });
+              }
             }}
           />
         </section>
         <FiltersPanel
+          municipality={municipality}
           filters={filters}
           options={options}
-          showPlanningBlocks={showPlanningBlocks}
+          showPrimaryContext={showPrimaryContext}
           showBoundary={showBoundary}
           onToggleLayer={(layer) =>
             setFilters((current) => {
@@ -179,17 +231,18 @@ export function MapShell() {
               };
             })
           }
-          onReset={() => setFilters(DEFAULT_FILTERS)}
-          onTogglePlanningBlocks={() => setShowPlanningBlocks((value) => !value)}
+          onReset={() => setFilters(getDefaultFilters(municipality))}
+          onTogglePrimaryContext={() => setShowPrimaryContext((value) => !value)}
           onToggleBoundary={() => setShowBoundary((value) => !value)}
         />
       </section>
 
       <section className="map-stage">
         <MapCanvas
+          municipality={municipality}
           tilesUrl={tilesUrl}
           filterQuery={filterQuery}
-          showPlanningBlocks={showPlanningBlocks}
+          showPrimaryContext={showPrimaryContext}
           showBoundary={showBoundary}
           selectedApplicationId={selectedApplicationId}
           selectedPlanningBlockId={selectedPlanningBlockId}
@@ -202,19 +255,19 @@ export function MapShell() {
             setSelectedTarget({ kind: "planning_block", id: planningBlockId })
           }
         />
-        {loading ? <div className="panel muted">Loading MBJB map metadata...</div> : null}
+        {loading ? <div className="panel muted">Loading {municipality} map metadata...</div> : null}
         {error ? <div className="panel muted">{error}</div> : null}
       </section>
 
       <aside className="right-panel">
         <DetailDrawer detail={selectedFeature} />
-        <Legend />
+        <Legend municipality={municipality} />
         <section className="detail-card">
           <p className="eyebrow">Context</p>
           <p className="muted">
-            Planning blocks come from MBJB Rancangan Tempatan layer 0. Boundary context uses
-            Sempadan MBJB Merge. Search and stats query PostGIS directly; map rendering uses
-            pg_tileserv vector tiles.
+            {municipality === "MBPJ"
+              ? "MBPJ map context comes from the public ArcGIS official-buildings layer plus the municipal boundary. Search and stats still query the canonical application tables, while SmartDev project rows remain geometry-null."
+              : "Planning blocks come from MBJB Rancangan Tempatan layer 0. Boundary context uses Sempadan MBJB Merge. Search and stats query PostGIS directly; map rendering uses pg_tileserv vector tiles."}
           </p>
           <a className="link-button" href="/sources">
             Source attribution

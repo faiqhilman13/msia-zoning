@@ -9,15 +9,30 @@ UNTUK_TETUAN_RE = re.compile(
     r"(?i)\bUNTUK\s+TETUAN\b.*?(?=\s+(?:DI|ATAS|MUKIM|DAERAH|JOHOR)\b|$)"
 )
 PLANNING_BLOCK_PREFIX_RE = re.compile(r"(?i)^BPK(?:\s*[:.\-]?\s*)")
+MBPJ_MUKIM_RE = re.compile(
+    r"(?i)\bMUKIM\s+(.+?)(?=(?:\s*,\s*|\s*\(|\s+DAERAH\b|\s+SELANGOR\b|\s+UNTUK\b|$))"
+)
+MBPJ_REFERENCE_YEAR_RE = re.compile(r"/(20\d{2})/(?:SMARTDEV|DECIS)\b", re.IGNORECASE)
+MBPJ_FALLBACK_YEAR_RE = re.compile(r"/(20\d{2})(?:/|$)")
+MBPJ_PARTY_TAIL_MARKERS = (" UNTUK :", " UNTUK:", " UNTUK ", " TETUAN ")
 
 MUKIM_CANONICAL_MAP = {
     "BANDAR": "Bandar Johor Bahru",
     "BANDAR JB": "Bandar Johor Bahru",
     "BANDAR JOHOR BAHRU": "Bandar Johor Bahru",
+    "BANDAR PETALING JAYA": "Bandar Petaling Jaya",
+    "DAMANSARA": "Damansara",
+    "PEKAN BARU SUNGAI BULOH": "Pekan Baru Sungai Buloh",
+    "PETALING": "Petaling",
+    "PETALING JAYA": "Petaling Jaya",
     "PELNTONG": "Plentong",
     "PENTONG": "Plentong",
     "PLENTONG": "Plentong",
     "PULAI": "Pulai",
+    "SG BULOH": "Sungai Buloh",
+    "SG. BULOH": "Sungai Buloh",
+    "SUNGAI BULOH": "Sungai Buloh",
+    "SUNGAI BULUH": "Sungai Buloh",
     "SUNGAI TIRAM": "Sungai Tiram",
     "TEBRAU": "Tebrau",
 }
@@ -45,8 +60,9 @@ def derive_public_title(
     title: str | None,
     owner_name_raw: str | None = None,
     developer_name: str | None = None,
+    fallback_title: str = "Maklumat pembangunan MBJB",
 ) -> str:
-    cleaned = clean_whitespace(title) or "Maklumat pembangunan MBJB"
+    cleaned = clean_whitespace(title) or fallback_title
     cleaned = UNTUK_TETUAN_RE.sub("", cleaned)
     owner = clean_whitespace(owner_name_raw)
     if owner:
@@ -56,8 +72,86 @@ def derive_public_title(
         fallback = clean_whitespace(developer_name)
         if fallback:
             return f"Cadangan pembangunan oleh {fallback}"
-        return "Maklumat pembangunan MBJB"
+        return fallback_title
     return cleaned
+
+
+def split_trailing_party_text(title: str | None) -> tuple[str | None, str | None]:
+    cleaned = clean_whitespace(title)
+    if not cleaned:
+        return None, None
+
+    upper = cleaned.upper()
+    split_index: int | None = None
+    split_marker = ""
+    for marker in MBPJ_PARTY_TAIL_MARKERS:
+        index = upper.rfind(marker)
+        if index <= 48:
+            continue
+        if split_index is None or index > split_index:
+            split_index = index
+            split_marker = marker
+
+    if split_index is None:
+        return cleaned, None
+
+    if split_marker == " TETUAN ":
+        preceding = upper[max(0, split_index - 10) : split_index + len(split_marker)]
+        untuk_index = preceding.rfind(" UNTUK ")
+        if untuk_index >= 0:
+            split_index = max(0, split_index - 10) + untuk_index
+            split_marker = " UNTUK "
+
+    public_title = clean_whitespace(cleaned[:split_index])
+    party_text = clean_whitespace(cleaned[split_index + len(split_marker) :].lstrip(" :-,"))
+    if not public_title:
+        return cleaned, None
+    return public_title, party_text
+
+
+def derive_mbpj_public_title(title: str | None) -> str:
+    public_title, _party_text = split_trailing_party_text(title)
+    return public_title or "Maklumat projek MBPJ"
+
+
+def extract_mbpj_party_text(title: str | None) -> str | None:
+    _public_title, party_text = split_trailing_party_text(title)
+    return party_text
+
+
+def extract_reference_year(reference_no: str | None) -> int | None:
+    text = clean_whitespace(reference_no)
+    if not text:
+        return None
+    match = MBPJ_REFERENCE_YEAR_RE.search(text) or MBPJ_FALLBACK_YEAR_RE.search(text)
+    if not match:
+        return None
+    return int(match.group(1))
+
+
+def extract_mbpj_mukim(title: str | None) -> str | None:
+    text = clean_whitespace(title)
+    if not text:
+        return None
+    match = MBPJ_MUKIM_RE.search(text)
+    if not match:
+        return None
+    return normalize_mukim(match.group(1))
+
+
+def infer_application_type(title: str | None, fallback: str = "Project Register") -> str:
+    text = (clean_whitespace(title) or "").upper()
+    if not text:
+        return fallback
+    if "KEBENARAN MERANCANG" in text:
+        return "Kebenaran Merancang"
+    if "PELAN BANGUNAN" in text:
+        return "Pelan Bangunan"
+    if "KERJA TANAH" in text:
+        return "Kerja Tanah"
+    if "KERJA KEJURUTERAAN" in text:
+        return "Kerja Kejuruteraan"
+    return fallback
 
 
 def normalize_status(value: str | None) -> str:

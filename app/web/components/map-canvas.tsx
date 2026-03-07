@@ -7,8 +7,8 @@ import { GeoJsonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import maplibregl, { type Map } from "maplibre-gl";
 
-import { boundariesUrl, layerColors, planningBlocksUrl } from "@/lib/map";
-import type { HoverState, LayerType, PlanningBlockPoint } from "@/lib/types";
+import { boundariesUrl, contextBuildingsUrl, layerColors, planningBlocksUrl } from "@/lib/map";
+import type { HoverState, LayerType, MunicipalityCode, PlanningBlockPoint } from "@/lib/types";
 
 type FocusPoint = {
   lon: number;
@@ -17,9 +17,10 @@ type FocusPoint = {
 };
 
 type Props = {
-  tilesUrl: string;
+  municipality: MunicipalityCode;
+  tilesUrl: string | null;
   filterQuery: string;
-  showPlanningBlocks: boolean;
+  showPrimaryContext: boolean;
   showBoundary: boolean;
   selectedApplicationId: string | null;
   selectedPlanningBlockId: string | null;
@@ -51,9 +52,10 @@ function lightenColor([r, g, b]: [number, number, number], factor = 0.18): [numb
 }
 
 export function MapCanvas({
+  municipality,
   tilesUrl,
   filterQuery,
-  showPlanningBlocks,
+  showPrimaryContext,
   showBoundary,
   selectedApplicationId,
   selectedPlanningBlockId,
@@ -68,6 +70,11 @@ export function MapCanvas({
   const [planningBlockPoints, setPlanningBlockPoints] = useState<PlanningBlockPoint[]>([]);
 
   useEffect(() => {
+    if (municipality !== "MBJB" || !showPrimaryContext) {
+      setPlanningBlockPoints([]);
+      return;
+    }
+
     const controller = new AbortController();
     const suffix = filterQuery ? `?${filterQuery}` : "";
     fetch(`/api/v1/context/planning-blocks${suffix}`, { signal: controller.signal })
@@ -76,16 +83,25 @@ export function MapCanvas({
       .catch(() => setPlanningBlockPoints([]));
 
     return () => controller.abort();
-  }, [filterQuery]);
+  }, [filterQuery, municipality, showPrimaryContext]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
       return;
     }
 
-    const defaultLon = Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? 103.7414);
-    const defaultLat = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? 1.4927);
-    const defaultZoom = Number(process.env.NEXT_PUBLIC_DEFAULT_ZOOM ?? 11);
+    const defaultLon =
+      municipality === "MBPJ"
+        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_LON ?? 101.6237)
+        : Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? 103.7414);
+    const defaultLat =
+      municipality === "MBPJ"
+        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_LAT ?? 3.1073)
+        : Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? 1.4927);
+    const defaultZoom =
+      municipality === "MBPJ"
+        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_ZOOM ?? 12)
+        : Number(process.env.NEXT_PUBLIC_DEFAULT_ZOOM ?? 11);
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -112,7 +128,7 @@ export function MapCanvas({
       overlayRef.current = null;
       mapRef.current = null;
     };
-  }, []);
+  }, [municipality]);
 
   useEffect(() => {
     if (!mapRef.current || !focusPoint) {
@@ -131,85 +147,88 @@ export function MapCanvas({
       return;
     }
 
-    const developmentLayer = new MVTLayer({
-      id: `development-${tilesUrl}`,
-      data: tilesUrl,
-      minZoom: 0,
-      maxZoom: 22,
-      pickable: true,
-      autoHighlight: true,
-      highlightColor: [255, 255, 255, 70],
-      onHover: (info) => {
-        const properties = (info.object as { properties?: Record<string, unknown> } | null)?.properties;
-        if (!properties || typeof properties.application_id !== "string") {
-          onHover(null);
-          return;
-        }
-        onHover({
-          x: info.x ?? 0,
-          y: info.y ?? 0,
-          applicationId: properties.application_id,
-          referenceNo: (properties.reference_no as string | null) ?? null,
-          title: String(properties.public_display_title ?? "MBJB feature"),
-          layerType: String(properties.layer_type ?? "unknown"),
-          status: String(properties.public_display_status ?? "unknown")
-        });
-      },
-      onClick: (info) => {
-        const properties = (info.object as { properties?: Record<string, unknown> } | null)?.properties;
-        if (properties && typeof properties.application_id === "string") {
-          onSelectApplication(properties.application_id);
-        }
-      },
-      renderSubLayers: (props) =>
-        new GeoJsonLayer(props, {
-          data: props.data,
-          extruded: true,
-          filled: true,
-          stroked: true,
-          lineWidthMinPixels: 1.8,
-          getLineColor: (feature) => {
-            const properties = feature.properties as Record<string, unknown>;
-            const [r, g, b] = darkenColor(getLayerColor(String(properties.layer_type ?? "")));
-            if (properties.application_id === selectedApplicationId) {
-              return [250, 247, 240, 255];
-            }
-            return [r, g, b, 235];
-          },
-          getFillColor: (feature) => {
-            const properties = feature.properties as Record<string, unknown>;
-            const baseColor = getLayerColor(String(properties.layer_type ?? ""));
-            if (properties.application_id === selectedApplicationId) {
-              const [r, g, b] = lightenColor(baseColor, 0.36);
-              return [r, g, b, 255];
-            }
-            const [r, g, b] = baseColor;
-            return [r, g, b, 215];
-          },
-          getElevation: (feature) => {
-            const properties = feature.properties as Record<string, unknown>;
-            const areaM2 = Number(properties.area_m2 ?? 0);
-            const base =
-              properties.layer_type === "pelan_bangunan"
-                ? 74
-                : properties.layer_type === "kebenaran_merancang"
-                  ? 56
-                  : 42;
-            return Math.max(base, Math.min(250, areaM2 / 52));
-          },
-          material: {
-            ambient: 0.42,
-            diffuse: 0.56,
-            shininess: 20,
-            specularColor: [255, 248, 232]
-          }
-        })
-    });
+    const developmentLayer =
+      municipality === "MBJB" && tilesUrl
+        ? new MVTLayer({
+            id: `development-${tilesUrl}`,
+            data: tilesUrl,
+            minZoom: 0,
+            maxZoom: 22,
+            pickable: true,
+            autoHighlight: true,
+            highlightColor: [255, 255, 255, 70],
+            onHover: (info) => {
+              const properties = (info.object as { properties?: Record<string, unknown> } | null)?.properties;
+              if (!properties || typeof properties.application_id !== "string") {
+                onHover(null);
+                return;
+              }
+              onHover({
+                x: info.x ?? 0,
+                y: info.y ?? 0,
+                applicationId: properties.application_id,
+                referenceNo: (properties.reference_no as string | null) ?? null,
+                title: String(properties.public_display_title ?? "MBJB feature"),
+                layerType: String(properties.layer_type ?? "unknown"),
+                status: String(properties.public_display_status ?? "unknown")
+              });
+            },
+            onClick: (info) => {
+              const properties = (info.object as { properties?: Record<string, unknown> } | null)?.properties;
+              if (properties && typeof properties.application_id === "string") {
+                onSelectApplication(properties.application_id);
+              }
+            },
+            renderSubLayers: (props) =>
+              new GeoJsonLayer(props, {
+                data: props.data,
+                extruded: true,
+                filled: true,
+                stroked: true,
+                lineWidthMinPixels: 1.8,
+                getLineColor: (feature) => {
+                  const properties = feature.properties as Record<string, unknown>;
+                  const [r, g, b] = darkenColor(getLayerColor(String(properties.layer_type ?? "")));
+                  if (properties.application_id === selectedApplicationId) {
+                    return [250, 247, 240, 255];
+                  }
+                  return [r, g, b, 235];
+                },
+                getFillColor: (feature) => {
+                  const properties = feature.properties as Record<string, unknown>;
+                  const baseColor = getLayerColor(String(properties.layer_type ?? ""));
+                  if (properties.application_id === selectedApplicationId) {
+                    const [r, g, b] = lightenColor(baseColor, 0.36);
+                    return [r, g, b, 255];
+                  }
+                  const [r, g, b] = baseColor;
+                  return [r, g, b, 215];
+                },
+                getElevation: (feature) => {
+                  const properties = feature.properties as Record<string, unknown>;
+                  const areaM2 = Number(properties.area_m2 ?? 0);
+                  const base =
+                    properties.layer_type === "pelan_bangunan"
+                      ? 74
+                      : properties.layer_type === "kebenaran_merancang"
+                        ? 56
+                        : 42;
+                  return Math.max(base, Math.min(250, areaM2 / 52));
+                },
+                material: {
+                  ambient: 0.42,
+                  diffuse: 0.56,
+                  shininess: 20,
+                  specularColor: [255, 248, 232]
+                }
+              })
+          })
+        : null;
 
     const planningLayer = new MVTLayer({
       id: "planning-blocks",
       data: planningBlocksUrl(),
-      visible: showPlanningBlocks,
+      visible: municipality === "MBJB" && showPrimaryContext,
       pickable: false,
       renderSubLayers: (props) =>
         new GeoJsonLayer(props, {
@@ -224,7 +243,7 @@ export function MapCanvas({
     const planningBlockDotsLayer = new ScatterplotLayer<PlanningBlockPoint>({
       id: "planning-block-dots",
       data: planningBlockPoints,
-      visible: showPlanningBlocks,
+      visible: municipality === "MBJB" && showPrimaryContext,
       pickable: true,
       radiusUnits: "pixels",
       stroked: true,
@@ -249,7 +268,7 @@ export function MapCanvas({
     const planningBlockLabelsLayer = new TextLayer<PlanningBlockPoint>({
       id: "planning-block-labels",
       data: planningBlockPoints,
-      visible: showPlanningBlocks,
+      visible: municipality === "MBJB" && showPrimaryContext,
       pickable: false,
       getPosition: (item) => [item.centroidLon, item.centroidLat],
       getText: (item) => item.planningBlock,
@@ -266,9 +285,26 @@ export function MapCanvas({
       getBorderWidth: 1
     });
 
+    const contextBuildingsLayer = new MVTLayer({
+      id: "mbpj-context-buildings",
+      data: contextBuildingsUrl(),
+      visible: municipality === "MBPJ" && showPrimaryContext,
+      pickable: false,
+      renderSubLayers: (props) =>
+        new GeoJsonLayer(props, {
+          data: props.data,
+          extruded: false,
+          filled: true,
+          stroked: true,
+          lineWidthMinPixels: 1.1,
+          getLineColor: [110, 71, 38, 220],
+          getFillColor: [170, 108, 56, 110]
+        })
+    });
+
     const boundaryLayer = new MVTLayer({
-      id: "mbjb-boundary",
-      data: boundariesUrl(),
+      id: `${municipality.toLowerCase()}-boundary`,
+      data: boundariesUrl(municipality),
       visible: showBoundary,
       pickable: false,
       renderSubLayers: (props) =>
@@ -284,13 +320,15 @@ export function MapCanvas({
     overlayRef.current.setProps({
       layers: [
         planningLayer,
+        contextBuildingsLayer,
         boundaryLayer,
         developmentLayer,
         planningBlockDotsLayer,
         planningBlockLabelsLayer
-      ]
+      ].filter(Boolean)
     });
   }, [
+    municipality,
     onHover,
     onSelectApplication,
     onSelectPlanningBlock,
@@ -298,7 +336,7 @@ export function MapCanvas({
     selectedApplicationId,
     selectedPlanningBlockId,
     showBoundary,
-    showPlanningBlocks,
+    showPrimaryContext,
     tilesUrl
   ]);
 
@@ -306,8 +344,9 @@ export function MapCanvas({
     <div className="map-panel">
       <div ref={containerRef} className="map-canvas" />
       <div className="map-overlay">
-        MBJB polygons are rendered from PostGIS vector tiles. Planning block labels and dots sit
-        on top of the GeoJB planning block overlay; click a dot to inspect planning block context.
+        {municipality === "MBPJ"
+          ? "MBPJ SmartDev rows stay text-first. The map shows MBPJ official-building context polygons and the municipal boundary from the public ArcGIS service."
+          : "MBJB polygons are rendered from PostGIS vector tiles. Planning block labels and dots sit on top of the GeoJB planning block overlay; click a dot to inspect planning block context."}
       </div>
     </div>
   );

@@ -1,0 +1,653 @@
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+
+
+
+<script type="text/javascript">
+	$(document).ready(function(){  
+
+		$("#check_log").click(function () {
+            if ($(this).is(":checked")) {
+                $("#log_open_form").show();
+            } else {
+                $("#log_open_form").hide();
+            }
+        });
+    });  
+
+</script>
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <title>MBPJ: Smart Development Control System (SmartDev)</title>
+        <!-- <link rel="shortcut icon" href="https://mbpjsmartdev.pjsmartcity.gov.my/favicon.ico"> -->
+        <link rel="icon" type="image/x-icon" href="https://mbpjsmartdev.pjsmartcity.gov.my/favicon.ico">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/bootstrap.min.css">
+        <!-- Fonts -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/fonts/line-icons.css">
+        <!-- Slicknav -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/slicknav.css">
+
+        <!-- Range Slider -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/ion.rangeSlider.css">
+        <!-- Range Slider  -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/ion.rangeSlider.skinFlat.css">
+        <!-- Nivo Lightbox -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/nivo-lightbox.css" >
+        <!-- Animate -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/animate.css">
+        <!-- Owl carousel -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/owl.carousel.css">
+        <!-- Rav Slider -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/extras/settings.css">
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/extras/layers.css">
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/extras/navigation.css">
+        <!-- Main Style -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/main.css">
+        <!-- Responsive Style -->
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/responsive.css">
+
+        <link rel="stylesheet" type="text/css" href="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/css/color-switcher.css">
+
+    </head>
+
+    <body>
+
+        <!-- Fos Testing Purpose -->
+        <!-- Color Switcher Start -->
+        <!-- <div id="color-style-switcher">
+            <div>
+                <h3>Color Palette</h3>
+                <ul class="colors">
+                    <li><a class="color1 active" href="#"></a></li>
+                    <li><a class="color2" href="#"></a></li>
+                    <li><a class="color3" href="#"></a></li>
+                    <li><a class="color4" href="#"></a></li>
+                    <li><a class="color5" href="#"></a></li>
+                    <li><a class="color6" href="#"></a></li>
+                </ul>
+            </div>
+            <div class="bottom"> <a href="#" class="settings"><i class="lni-cog"></i></a> 
+            </div>
+        </div> -->
+        <!-- Color Switcher Start -->
+
+        <!-- Header Area wrapper Start -->
+
+        <!-- Header Area wrapper Starts -->
+<header id="header-wrap">
+    <!-- Start Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-7 col-md-8 col-xs-12">
+                    <!-- Start Contact Info -->
+                    <ul class="links clearfix">
+                        <li><i class="lni-phone-handset"></i>03-7839 2400</li>
+                        <li><i class="lni-envelope"></i> aduan@mbpj.gov.my</li>
+                        <li><a href="#"><i class="lni-map-marker"></i> MBPJ, PJ, SEL, MY</a></li>
+                    </ul>
+                    <!-- End Contact Info -->
+                </div>
+                <div class="col-lg-5 col-md-4 col-xs-12">
+
+                    <div class="roof-social float-right">
+                        <!-- <a class="facebook" target="_blank" href="https://www.facebook.com/pjcitycouncil"><i class="lni-facebook-filled"></i></a>
+                        <a class="twitter" target="_blank" href="https://x.com/pjcitycouncil"><i class="lni-twitter-filled"></i></a> -->
+
+                        <a class="instagram" title="Bahasa Melayu" href="https://mbpjsmartdev.pjsmartcity.gov.my/language/change/my">
+                            <img class="m-3" 
+                                src="https://mbpjsmartdev.pjsmartcity.gov.my/assets/images/_smarty/flags/my.png" 
+                                alt="lang" />
+                        </a>
+                        <a class="twitter" title="Bahasa Inggeris" href="https://mbpjsmartdev.pjsmartcity.gov.my/language/change/en">
+                            <img class="m-3" 
+                                src="https://mbpjsmartdev.pjsmartcity.gov.my/assets/images/_smarty/flags/us.png" 
+                                alt="lang" />
+                        </a>
+                    </div>
+                    <div class="header-top-right float-right">
+                                                    <a href="https://mbpjsmartdev.pjsmartcity.gov.my/login" class="header-top-button"><i class="lni-lock"></i> Log Masuk</a> |
+                            <a href="https://mbpjsmartdev.pjsmartcity.gov.my/sessions/daftar" class="header-top-button"><i class="lni-pencil"></i> Daftar</a>
+                                                
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Top Bar -->
+
+    <!-- Navbar Start -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white"  data-toggle="sticky-onscroll">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                    <span class="lin-menu"></span>
+                </button>
+                <a class="navbar-brand" href="https://mbpjsmartdev.pjsmartcity.gov.my/home">
+                    <img height="50px" src="https://mbpjsmartdev.pjsmartcity.gov.my/assets/images/_smarty/logo_decis_2.png" alt="">
+                </a>
+            </div>
+
+            <div class="collapse navbar-collapse" id="main-navbar">
+                <ul class="navbar-nav mr-auto w-100 justify-content-center">
+
+                    <li class="nav-item ">
+                        <a class="nav-link" href="https://mbpjsmartdev.pjsmartcity.gov.my/home">
+                            Utama
+                        </a>
+                    </li>
+
+                                                    <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      MENGENAI KAMI <i class="fa fa-angle-down"></i>
+                                    </a>
+                                    <div class="dropdown-menu">
+
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/pengenalan-aplikasi-smart-development-control---smartdev--">
+                                                    PENGENALAN SISTEM</a>
+
+                                                                                            
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/bahagian-kawalan-pembangunan">
+                                                    PEGAWAI &amp; KAKITANGAN BAHAGIAN</a>
+
+                                                                                            
+                                          
+                                    </div>
+                                </li>
+
+                        
+
+
+
+                                                    <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      PANDUAN PERMOHONAN <i class="fa fa-angle-down"></i>
+                                    </a>
+                                    <div class="dropdown-menu">
+
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/carta-alir-permohonan-km">
+                                                    PERMOHONAN KM</a>
+
+                                                                                            
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/ud">
+                                                    BAHAGIAN UNIVERSAL DESIGN (UD)</a>
+
+                                                                                            
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/cpted">
+                                                    BAHAGIAN CPTED</a>
+
+                                                                                            
+                                         
+                                                                                            
+                                                <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/proses-kelulusan-pengangkutan">
+                                                    BAHAGIAN PENGANGKUTAN</a>
+
+                                                                                            
+                                          
+                                    </div>
+                                </li>
+
+                        
+
+
+
+                                                    <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      PERUNDING <i class="fa fa-angle-down"></i>
+                                    </a>
+                                    <div class="dropdown-menu">
+
+                                         
+                                                                                            <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/2">JURURANCANG</a>
+                                                                                            
+                                         
+                                                                                            <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/1">ARKITEK</a>
+                                                                                            
+                                         
+                                                                                            <a class="dropdown-item" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/3">JURUTERA</a>
+                                                                                            
+                                          
+                                    </div>
+                                </li>
+
+                        
+
+
+
+                    
+                    <li class="nav-item ">
+                        <a class="nav-link" href="https://mbpjsmartdev.pjsmartcity.gov.my/contact">
+                            Hubungi Kami
+                        </a>
+                    </li>
+                </ul>
+
+
+                <!-- <div class="search-add float-right">
+                    <form>
+                        <div class="form-group">
+                            <input type="search" name="field-name" value="" placeholder="Cari di sini" required="">
+                            <button type="submit" class="search-btn"><span class="lni-search"></span></button>
+                        </div>
+                    </form>
+                </div> -->
+
+                <div class="search-add float-right">
+                  <form action="https://mbpjsmartdev.pjsmartcity.gov.my/search" method="GET" role="search" aria-label="Site search">
+                    <div class="form-group">
+                      <input
+                        type="search"
+                        name="q"
+                        value=""
+                        placeholder="Cari di sini"
+                        class="form-control"
+                        autocomplete="off"
+                        minlength="2"
+                        aria-label="Cari di sini"
+                      >
+                      <button type="submit" class="search-btn">
+                        <span class="lni-search" aria-hidden="true"></span>
+                        <span class="sr-only">Cari</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Mobile Menu Start -->
+        <ul class="mobile-menu">
+            <li>
+                <a class="active" href="https://mbpjsmartdev.pjsmartcity.gov.my/home">Utama</a>
+            </li>
+
+                                    <li>
+                            
+                            <a href="#">MENGENAI KAMI</a>
+                            <ul class="dropdown">
+
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/pengenalan-aplikasi-smart-development-control---smartdev--">PENGENALAN SISTEM</a></li>
+
+                                                                            
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/bahagian-kawalan-pembangunan">PEGAWAI &amp; KAKITANGAN BAHAGIAN</a></li>
+
+                                                                            
+                                  
+                            </ul>
+                        </li>
+
+                
+
+
+
+                                    <li>
+                            
+                            <a href="#">PANDUAN PERMOHONAN</a>
+                            <ul class="dropdown">
+
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/carta-alir-permohonan-km">PERMOHONAN KM</a></li>
+
+                                                                            
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/ud">BAHAGIAN UNIVERSAL DESIGN (UD)</a></li>
+
+                                                                            
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/cpted">BAHAGIAN CPTED</a></li>
+
+                                                                            
+                                 
+                                                                            <li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/proses-kelulusan-pengangkutan">BAHAGIAN PENGANGKUTAN</a></li>
+
+                                                                            
+                                  
+                            </ul>
+                        </li>
+
+                
+
+
+
+                                    <li>
+                            
+                            <a href="#">PERUNDING</a>
+                            <ul class="dropdown">
+
+                                 
+                                                                            <li><a target="_blank" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/2">JURURANCANG</a></li>
+                                                                            
+                                 
+                                                                            <li><a target="_blank" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/1">ARKITEK</a></li>
+                                                                            
+                                 
+                                                                            <li><a target="_blank" href="https://mbpjsmartdev.pjsmartcity.gov.my/listperunding/3">JURUTERA</a></li>
+                                                                            
+                                  
+                            </ul>
+                        </li>
+
+                
+
+
+
+                        
+         
+            <li>
+                <a href="https://mbpjsmartdev.pjsmartcity.gov.my/contact">Hubungi Kami</a>
+            </li>
+        </ul>
+        <!-- Mobile Menu End -->
+    </nav>
+    <!-- Navbar End -->
+
+    <div class="clearfix"></div>
+
+</header>
+<!-- Header Area wrapper End -->  
+
+        <!-- Header Area wrapper End -->
+
+        <!-- Page Banner Start -->
+	    <div id="page-banner-area" class="page-banner">
+	      <div class="page-banner-title">
+	        <div class="text-center">
+	          <h2></h2>
+	          <a href="https://mbpjsmartdev.pjsmartcity.gov.my/home"><i class="lni-home"></i> Utama</a>
+	          <span class="crumbs-spacer"><i class="lni-chevron-right"></i></span>
+	          <span class="current">Maklumbalas/Cadangan &amp; Pandangan Mengenai Projek Pembangunan</span>
+	        </div>
+	      </div>
+	    </div>
+	    <!-- Page Banner End -->
+
+        <section class="featured-bg ">
+    <div class="container mt-1 mb-2">
+        <div class="massage-wrapper">
+                              
+            
+                               
+                               
+                              
+                    </div>
+    </div>
+</section>
+    
+
+        <!-- Content Start -->
+        <section class="featured-bg ">
+			<div class="container">	
+				<div class="row">
+                    <!-- Rasnan -->
+                    <!-- kene setkan name() kt routes -->
+                    
+					 	
+
+										<div class="col-md-12">				 
+						
+<div class="widget mb-3">
+    <div class="agent-inner">
+    	
+		<h3 class="sidebar-title" style="margin-bottom: 10px;">
+			<i class="lni-support"></i> Maklumbalas/Cadangan &amp; Pandangan Mengenai Projek Pembangunan</h3>
+		<hr class="mt-0" />
+
+		<div class="gmap">
+            <ul class="nav nav-tabs  flex-column flex-sm-row" id="myTab" role="tablist">
+				<li class="nav-item" role="presentation">
+				    <button class="nav-link active" id="home-tab" data-toggle="tab" data-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Semakan</button>
+				</li>
+				<li class="nav-item" role="presentation">
+				    <a class="nav-link" href="https://mbpjsmartdev.pjsmartcity.gov.my/sessions/daftarmaklumbalas" >Maklumbalas / Cadangan / Pandangan</a>
+				</li>
+			  
+			</ul>
+			<div class="tab-content" id="myTabContent">
+				<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+					<p class="alert alert-info m-3"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button><strong>Makluman :</strong>Untuk Semakan, Sila masukkan butiran berikut:-</p>
+
+					<form  method="GET" class="m-4">
+
+						<div class="form-group">
+							<label class="font-weight-bold">No. Rujukan Projek  <span style="color:red;">*</span></label>
+							<input type="text" name="no_rujukan" value="" required class="form-control" placeholder="Masukkan no rujukan"/>
+						</div>
+
+						<div class="checkboxes one-in-row mb-0">
+					        <input id="check_log" value="2" type="checkbox" name="check"/>
+					        <label for="check_log">Perakuan bukan robot / spam</label>
+					    </div>
+
+					    <hr class="mt-1" />
+
+						<div id="log_open_form" style="display:none;" class="col-md-9 "> 
+							<button type="submit" class="btn btn-common">Hantar</button>
+						</div>
+
+					</form>
+
+
+					
+				</div>
+			  	<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+			  		tab2
+			  	</div>
+			  
+			</div>
+		</div>
+
+    </div>
+</div>
+
+	
+ 
+					</div> 
+					 
+                </div>	
+				 
+			</div>
+			
+		</section>	
+
+		<!-- Content End -->
+
+        <!-- Client Logo Section Start -->
+        <section id="clients-logo" class="section-padding" style="background:#e8e9eb">
+            <div class="container">
+                <div class="row">
+                    <div id="latest-property" class="owl-carousel">
+
+                        <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="https://www.malaysia.gov.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/1.png" alt=""></a>
+                            </div>
+                        </div>
+                          <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="http://www.selangor.gov.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/2.png" alt=""></a>
+                            </div>
+                          </div>
+                          <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="http://www.kpkt.gov.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/3.png" alt=""></a>
+                            </div>
+                          </div>
+                          <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="http://www.mampu.gov.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/4.png" alt=""></a>
+                            </div>
+                          </div>
+                          <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="http://www.mscmalaysia.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/5.png" alt=""></a>
+                            </div>
+                          </div>
+                          <div class="col-lg-12">
+                            <div class="client-logo bg-white">
+                              <a href="http://www.kwp.gov.my/" target="blank"><img class="img-fluid" src="https://mbpjsmartdev.pjsmartcity.gov.my/img/clients/6.png" alt=""></a>
+                            </div>
+                          </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        <!-- Client Logo Section End -->
+
+        <!-- Footer Section Start -->
+
+        <footer id="footer" class="footer-area section-padding">
+            <div class="container">
+    <div class="container">
+	    <div class="row">
+	    	<div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+		        <h3 class="footer-titel text-uppercase">Hubungi Kami</h3>
+		        <ul class="address">
+		            <li>
+		              	<a><i class="lni-map-marker"></i> JABATAN PERANCANGAN PEMBANGUNAN, </a>
+		              	<p class="ml-3">MAJLIS BANDARAYA PETALING JAYA , JALAN YONG SHOOK LIN,</p>
+		              	<p style="margin-left: 37px;">46675 PETALING JAYA , Selangor Darul Ehsan</p>
+		            </li>
+		            <li>
+		              	<a><i class="lni-phone-handset"></i> 03-7839 2400</a>
+		            </li>
+		            <li>
+		              	<a><i class="lni-printer"></i> 03-7839 2401</a>
+		            </li>
+					<li>
+					  <a href="mailto:aduan@mbpj.gov.my">
+					    <i class="lni-envelope"></i> aduan@mbpj.gov.my
+					  </a>
+					</li>
+		        </ul>
+	        </div>
+	        <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+	        	<h3 class="footer-titel text-uppercase">Pautan</span></h3>
+	        	<ul class="footer-link">
+		        									<li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/terma-_-syarat">TERMA &amp; SYARAT</a></li>
+														<li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/penafian">PENAFIAN</a></li>
+														<li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/dasar-privasi">DASAR PRIVASI</a></li>
+														<li><a href="https://mbpjsmartdev.pjsmartcity.gov.my/pages/dasar-keselamatan">DASAR KESELAMATAN</a></li>
+						         
+		        </ul>
+
+		        <hr>
+							 
+				
+				<i class="fa fa-line-chart"></i> 					
+				<p>Bermula September 2019<br>						
+					Jumlah Pelawat : <b>13669614</b>
+				</p>
+
+	        </div>
+	        <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
+		        <h3 class="footer-titel text-uppercase">Maklumbalas/Cadangan &amp; Pandangan Mengenai Projek Pembangunan</h3>
+
+		        <a type="button" class="btn btn-common" href="https://mbpjsmartdev.pjsmartcity.gov.my/sessions/semakmaklumbalas" target="_blank">
+		        	<i class="lni-envelope mr-2"></i> Klik untuk membuat maklumbalas
+		        </a>
+
+		        <hr/>
+
+		        <ul class="share-buttons mt-5 mb-4">
+                  <li><a class="fb-share" target="_blank" href="https://www.facebook.com/pjcitycouncil"><i class="lni-facebook-filled"></i> Facebook</a></li>
+                  <li><a class="twitter-share" target="_blank" href="https://x.com/pjcitycouncil"><i class="lni-twitter-filled"></i> Tweet</a></li>
+                </ul>
+
+	        </div>
+	    </div>
+    </div>  
+ </div> 
+   
+        </footer> 
+
+        <!-- Footer Section End -->
+
+        <section id="copyright">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Hakcipta Terpelihara 2026 © <a rel="nofollow" href="https://www.mbpj.gov.my/" target="_blank"> Jabatan Perancangan Pembangunan, MBPJ</a></p>
+                    </div>
+                </div>
+            </div>
+        </section> 
+
+        <!-- Go to Top Link -->
+        <a href="#" class="back-to-top">
+            <i class="lni-chevron-up"></i>
+        </a>
+      
+        <!-- Preloader -->
+        <div id="preloader">
+            <div class="loader" id="loader-1"></div>
+        </div>
+        <!-- End Preloader -->
+
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/color-switcher.js"></script>
+        
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery-min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/popper.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/bootstrap.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.mixitup.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.counterup.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/ion.rangeSlider.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.parallax.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/waypoints.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/wow.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/owl.carousel.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.slicknav.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/nivo-lightbox.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.slicknav.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/main.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/form-validator.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/contact-form-script.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.themepunch.tools.min.js"></script>
+        <script src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/jquery.themepunch.revolution.min.js"></script>
+
+        <!-- SLIDER REVOLUTION 5.0 EXTENSIONS -->  
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.actions.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.carousel.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.kenburn.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.layeranimation.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.migration.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.navigation.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.parallax.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.slideanims.min.js"></script>
+        <script type="text/javascript" src="https://mbpjsmartdev.pjsmartcity.gov.my/template/estatebit/assets/js/extensions/revolution.extension.video.min.js"></script>
+
+        <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script> -->
+        <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script> -->
+
+
+        
+    </body>
+</html>

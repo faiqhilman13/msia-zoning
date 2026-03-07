@@ -87,6 +87,41 @@ CREATE TABLE IF NOT EXISTS raw.mbjb_kerja_tanah (
     PRIMARY KEY (ingest_run_id, source_object_id)
 );
 
+CREATE TABLE IF NOT EXISTS raw.mbpj_project_register (
+    ingest_run_id uuid NOT NULL REFERENCES meta.ingest_runs(ingest_run_id) ON DELETE CASCADE,
+    source_object_id bigint NOT NULL,
+    source_row_number integer NOT NULL,
+    reference_no text,
+    raw_attributes jsonb NOT NULL,
+    raw_record_hash text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (ingest_run_id, source_object_id)
+);
+
+CREATE TABLE IF NOT EXISTS raw.mbpj_official_buildings (
+    ingest_run_id uuid NOT NULL REFERENCES meta.ingest_runs(ingest_run_id) ON DELETE CASCADE,
+    source_object_id bigint NOT NULL,
+    source_layer text NOT NULL DEFAULT 'official_buildings',
+    name text,
+    raw_attributes jsonb NOT NULL,
+    raw_record_hash text NOT NULL,
+    geometry geometry(MultiPolygon, 4326),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (ingest_run_id, source_object_id)
+);
+
+CREATE TABLE IF NOT EXISTS raw.mbpj_boundary (
+    ingest_run_id uuid NOT NULL REFERENCES meta.ingest_runs(ingest_run_id) ON DELETE CASCADE,
+    source_object_id bigint NOT NULL,
+    source_layer text NOT NULL DEFAULT 'municipality_boundary',
+    name text,
+    raw_attributes jsonb NOT NULL,
+    raw_record_hash text NOT NULL,
+    geometry geometry(MultiPolygon, 4326),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (ingest_run_id, source_object_id)
+);
+
 CREATE TABLE IF NOT EXISTS stage.mbjb_development_unified (
     application_id uuid PRIMARY KEY,
     ingest_run_id uuid NOT NULL REFERENCES meta.ingest_runs(ingest_run_id) ON DELETE CASCADE,
@@ -132,6 +167,83 @@ CREATE TABLE IF NOT EXISTS stage.mbjb_development_unified (
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     UNIQUE (source_system, source_layer, source_object_id)
+);
+
+CREATE TABLE IF NOT EXISTS stage.mbpj_project_register (
+    application_id uuid PRIMARY KEY,
+    ingest_run_id uuid NOT NULL REFERENCES meta.ingest_runs(ingest_run_id) ON DELETE CASCADE,
+    source_system text NOT NULL,
+    source_municipality text NOT NULL,
+    source_layer text NOT NULL,
+    source_object_id bigint NOT NULL,
+    source_row_number integer NOT NULL,
+    source_url text NOT NULL,
+    reference_no text,
+    reference_no_alt text,
+    title text,
+    application_type text NOT NULL,
+    current_status text,
+    status_raw text,
+    application_year integer,
+    approval_year integer,
+    meeting_date_1 timestamptz,
+    meeting_decision_1 text,
+    meeting_date_2 timestamptz,
+    meeting_decision_2 text,
+    meeting_date_3 timestamptz,
+    meeting_decision_3 text,
+    meeting_date_4 timestamptz,
+    meeting_decision_4 text,
+    lot_no text,
+    mukim text,
+    planning_block text,
+    zoning_name text,
+    owner_name_raw text,
+    developer_name text,
+    consultant_name text,
+    proxy_holder_name text,
+    site_area_acres numeric,
+    site_area_m2 numeric,
+    area_m2 numeric,
+    area_acres numeric,
+    public_display_title text NOT NULL,
+    public_display_status text NOT NULL,
+    is_public_visible boolean NOT NULL DEFAULT true,
+    raw_record_hash text NOT NULL,
+    raw_attributes jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (source_system, source_layer, source_object_id)
+);
+
+CREATE TABLE IF NOT EXISTS stage.mbpj_official_buildings (
+    source_object_id bigint PRIMARY KEY,
+    municipality_code text NOT NULL,
+    context_type text NOT NULL,
+    source_system text NOT NULL,
+    source_layer text NOT NULL,
+    name text,
+    category text,
+    address text,
+    inspection_status text,
+    raw_record_hash text NOT NULL,
+    raw_attributes jsonb NOT NULL,
+    centroid geometry(Point, 4326) NOT NULL,
+    geometry geometry(MultiPolygon, 4326) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS stage.mbpj_boundary (
+    source_object_id bigint PRIMARY KEY,
+    municipality_code text NOT NULL,
+    context_type text NOT NULL,
+    source_system text NOT NULL,
+    source_layer text NOT NULL,
+    name text,
+    category text,
+    raw_record_hash text NOT NULL,
+    raw_attributes jsonb NOT NULL,
+    centroid geometry(Point, 4326) NOT NULL,
+    geometry geometry(MultiPolygon, 4326) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS core.development_applications (
@@ -220,6 +332,25 @@ CREATE TABLE IF NOT EXISTS core.admin_boundaries (
     UNIQUE (source_system, source_layer, source_object_id)
 );
 
+CREATE TABLE IF NOT EXISTS core.context_features (
+    context_feature_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    municipality_code text NOT NULL,
+    context_type text NOT NULL,
+    name text,
+    category text,
+    address text,
+    inspection_status text,
+    source_system text NOT NULL,
+    source_layer text NOT NULL,
+    source_object_id bigint NOT NULL,
+    raw_record_hash text NOT NULL,
+    raw_attributes jsonb NOT NULL,
+    centroid geometry(Point, 4326) NOT NULL,
+    geometry geometry(MultiPolygon, 4326) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (source_system, source_layer, source_object_id)
+);
+
 CREATE TABLE IF NOT EXISTS core.search_documents (
     search_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     application_id uuid NOT NULL REFERENCES core.development_applications(application_id) ON DELETE CASCADE,
@@ -235,9 +366,10 @@ CREATE TABLE IF NOT EXISTS core.search_documents (
     UNIQUE (application_id)
 );
 
-CREATE OR REPLACE VIEW marts.mbjb_public_features AS
+CREATE OR REPLACE VIEW marts.public_applications AS
 SELECT
     a.application_id,
+    a.source_system,
     a.source_municipality,
     a.source_layer AS layer_type,
     a.application_type,
@@ -253,14 +385,43 @@ SELECT
     a.zoning_name,
     a.developer_name,
     a.consultant_name,
+    CASE WHEN g.application_id IS NOT NULL THEN true ELSE false END AS has_geometry,
     g.area_m2,
     g.area_acres,
     ST_X(g.centroid) AS centroid_lon,
     ST_Y(g.centroid) AS centroid_lat,
+    g.centroid,
     g.geometry
 FROM core.development_applications a
-JOIN core.development_geometries g USING (application_id)
+LEFT JOIN core.development_geometries g USING (application_id)
 WHERE a.is_public_visible = true;
+
+CREATE OR REPLACE VIEW marts.mbjb_public_features AS
+SELECT
+    application_id,
+    source_municipality,
+    layer_type,
+    application_type,
+    reference_no,
+    reference_no_alt,
+    public_display_title,
+    public_display_status,
+    application_year,
+    approval_year,
+    lot_no,
+    mukim,
+    planning_block,
+    zoning_name,
+    developer_name,
+    consultant_name,
+    area_m2,
+    area_acres,
+    centroid_lon,
+    centroid_lat,
+    geometry
+FROM marts.public_applications
+WHERE source_municipality = 'MBJB'
+  AND has_geometry = true;
 
 CREATE OR REPLACE VIEW marts.mbjb_context_planning_blocks AS
 SELECT
@@ -282,37 +443,67 @@ SELECT
 FROM core.admin_boundaries
 WHERE municipality_code = 'MBJB';
 
+CREATE OR REPLACE VIEW marts.mbpj_context_buildings AS
+SELECT
+    context_feature_id,
+    municipality_code,
+    context_type,
+    name,
+    category,
+    address,
+    inspection_status,
+    source_layer,
+    source_object_id,
+    ST_X(centroid) AS centroid_lon,
+    ST_Y(centroid) AS centroid_lat,
+    geometry
+FROM core.context_features
+WHERE municipality_code = 'MBPJ'
+  AND context_type = 'official_building';
+
+CREATE OR REPLACE VIEW marts.mbpj_context_boundaries AS
+SELECT
+    boundary_id,
+    boundary_type,
+    boundary_name,
+    geometry
+FROM core.admin_boundaries
+WHERE municipality_code = 'MBPJ';
+
 CREATE OR REPLACE VIEW marts.stats_overview AS
 SELECT
     source_municipality AS municipality_code,
     count(*) AS total_features,
+    count(*) FILTER (WHERE has_geometry) AS map_enabled_features,
+    count(*) FILTER (WHERE NOT has_geometry) AS text_only_features,
     count(*) FILTER (WHERE public_display_status = 'approved') AS approved_features,
     count(*) FILTER (WHERE public_display_status = 'pending') AS pending_features,
     round(sum(area_acres)::numeric, 2) AS total_area_acres
-FROM marts.mbjb_public_features
+FROM marts.public_applications
 GROUP BY 1;
 
 CREATE OR REPLACE VIEW marts.stats_by_layer AS
 SELECT layer_type, count(*) AS feature_count
-FROM marts.mbjb_public_features
+FROM marts.public_applications
 GROUP BY 1
 ORDER BY 2 DESC, 1;
 
 CREATE OR REPLACE VIEW marts.stats_by_status AS
 SELECT public_display_status, count(*) AS feature_count
-FROM marts.mbjb_public_features
+FROM marts.public_applications
 GROUP BY 1
 ORDER BY 2 DESC, 1;
 
 CREATE OR REPLACE VIEW marts.stats_by_year AS
 SELECT COALESCE(approval_year, application_year) AS year, count(*) AS feature_count
-FROM marts.mbjb_public_features
+FROM marts.public_applications
 GROUP BY 1
 ORDER BY 1 NULLS LAST;
 
 CREATE INDEX IF NOT EXISTS idx_stage_mbjb_dev_geom ON stage.mbjb_development_unified USING gist (geometry);
 CREATE INDEX IF NOT EXISTS idx_stage_mbjb_dev_centroid ON stage.mbjb_development_unified USING gist (centroid);
 CREATE INDEX IF NOT EXISTS idx_core_app_layer ON core.development_applications(source_layer);
+CREATE INDEX IF NOT EXISTS idx_core_app_municipality ON core.development_applications(source_municipality);
 CREATE INDEX IF NOT EXISTS idx_core_app_status ON core.development_applications(public_display_status);
 CREATE INDEX IF NOT EXISTS idx_core_app_years ON core.development_applications(application_year, approval_year);
 CREATE INDEX IF NOT EXISTS idx_core_app_reference ON core.development_applications(reference_no);
@@ -324,6 +515,9 @@ CREATE INDEX IF NOT EXISTS idx_core_geom_geom ON core.development_geometries USI
 CREATE INDEX IF NOT EXISTS idx_core_geom_centroid ON core.development_geometries USING gist (centroid);
 CREATE INDEX IF NOT EXISTS idx_core_zoning_geom ON core.zoning_areas USING gist (geometry);
 CREATE INDEX IF NOT EXISTS idx_core_admin_geom ON core.admin_boundaries USING gist (geometry);
+CREATE INDEX IF NOT EXISTS idx_core_context_geom ON core.context_features USING gist (geometry);
+CREATE INDEX IF NOT EXISTS idx_core_context_centroid ON core.context_features USING gist (centroid);
+CREATE INDEX IF NOT EXISTS idx_core_context_municipality ON core.context_features(municipality_code, context_type);
 CREATE INDEX IF NOT EXISTS idx_core_search_tsv ON core.search_documents USING gin (search_tsv);
 
 INSERT INTO meta.source_registry (source_system, source_name, source_url, municipality_code, notes)
@@ -333,6 +527,36 @@ VALUES (
     'https://geojb.gov.my/gisserver/rest/services/GEOJB/MaklumatPembangunan/FeatureServer?f=pjson',
     'MBJB',
     'Public ArcGIS REST services for MBJB development layers and context overlays.'
+)
+ON CONFLICT (source_system) DO UPDATE
+SET
+    source_name = EXCLUDED.source_name,
+    source_url = EXCLUDED.source_url,
+    municipality_code = EXCLUDED.municipality_code,
+    notes = EXCLUDED.notes;
+
+INSERT INTO meta.source_registry (source_system, source_name, source_url, municipality_code, notes)
+VALUES (
+    'mbpj_smartdev',
+    'MBPJ SmartDev',
+    'https://mbpjsmartdev.pjsmartcity.gov.my/',
+    'MBPJ',
+    'Public MBPJ SmartDev approved-project register captured as HTML. Project rows remain text-first even when MBPJ context geometry is available separately.'
+)
+ON CONFLICT (source_system) DO UPDATE
+SET
+    source_name = EXCLUDED.source_name,
+    source_url = EXCLUDED.source_url,
+    municipality_code = EXCLUDED.municipality_code,
+    notes = EXCLUDED.notes;
+
+INSERT INTO meta.source_registry (source_system, source_name, source_url, municipality_code, notes)
+VALUES (
+    'mbpj_arcgis',
+    'MBPJ ArcGIS',
+    'https://services3.arcgis.com/Pm8D5pANQ4gpdLsD/arcgis/rest/services/MBPJ/FeatureServer?f=pjson',
+    'MBPJ',
+    'Public MBPJ ArcGIS context geometry for official buildings and municipality boundary. Not a direct project-polygon source.'
 )
 ON CONFLICT (source_system) DO UPDATE
 SET

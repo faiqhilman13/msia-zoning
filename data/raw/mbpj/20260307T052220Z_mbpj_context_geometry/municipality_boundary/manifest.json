@@ -1,0 +1,9 @@
+{
+  "batch_files": [
+    "batch-0001.geojson"
+  ],
+  "count": 1,
+  "label": "MBPJ Boundary",
+  "layer": "municipality_boundary",
+  "object_id_field": "OBJECTID"
+}

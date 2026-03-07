@@ -2,7 +2,7 @@
 
 Implementation plan for a public-facing geospatial product that visualizes development approvals and related planning data from Malaysian municipalities, starting with a municipality that already exposes usable public machine-readable data.
 
-Last updated: March 6, 2026
+Last updated: March 7, 2026
 
 ## 0. Implementation Update: March 6, 2026
 
@@ -19,7 +19,10 @@ Key implementation decisions captured in code and docs:
   - `Mukim_161025/0`
 - raw source artifacts are preserved under `data/raw/mbjb/<run>/`
 - normalized GeoParquet outputs are written to `data/stage/mbjb/<run>/`
+- MBPJ raw SmartDev HTML snapshots are now preserved under `data/raw/mbpj/<run>/`
+- MBPJ normalized stage outputs now include `mbpj_project_register.parquet` plus context geometry Parquet files for official buildings and the municipality boundary
 - an explicit normalization step is available in `scripts/normalize/normalize_mbjb_stage.py`
+- an explicit MBPJ re-normalization step is available in `scripts/normalize/normalize_mbpj_stage.py`
 - canonicalization now standardizes:
   - planning block values such as `BPK 18.1` -> `18.1`
   - mukim casing and obvious source variants such as `PLENTONG`, `PELNTONG`, `PENTONG` -> `Plentong`
@@ -51,11 +54,20 @@ Verification completed in this repository:
 - `npm run build` passes for the Next.js app
 - local Docker Compose startup path has been verified
 - filtered stats and filtered map behavior have been verified together in the running browser
+- MBPJ phase 1 is now implemented in code as a context-geometry municipality:
+  - the SmartDev homepage approved-project register is ingested from static HTML
+  - per-run raw snapshots also preserve the feedback lookup, terms, disclaimer, and GIS landing pages
+  - MBPJ rows load into the canonical application/search model with nullable geometry
+  - the API supports `municipality=MBPJ` for search and stats queries
+- a public MBPJ ArcGIS service now provides context-only geometry for official buildings and the municipality boundary
+- MBPJ still does not have a verified direct public project-polygon source, so SmartDev project rows remain geometry-null
+- Docker Compose, PostGIS publish, pg_tileserv exposure, MBPJ QA, and local API verification now succeed for the MBPJ load path in this repository
+- on Apple Silicon, the current PostGIS image requires `DOCKER_DEFAULT_PLATFORM=linux/amd64` when starting the stack locally
 
 Strategic status:
 
 - MBJB MVP is complete enough to serve as the baseline municipality
-- the next municipality to implement should now be `MBPJ`
+- MBPJ is now the second municipality in the local stack, with conservative context-only map rendering
 
 ## 1. Executive Summary
 
@@ -286,10 +298,15 @@ Useful public pages:
 
 Observed characteristics:
 
-- homepage displays a public `Senarai Projek Yang Diluluskan`
-- the UI showed `62` approved-project entries at the time checked
-- each row includes a project reference and long project title with location context
-- public GIS portal exposes land-use and administrative context
+- the homepage currently embeds a static HTML table titled `Senarai Projek Yang Diluluskan`
+- the observed homepage table exposed `62` approved-project rows on March 6, 2026
+- each row currently contains:
+  - row number (`Bil.`)
+  - long project title text with locality context
+  - a highlighted project reference block when the source row populates it
+- several rows currently have blank reference blocks, so a deterministic title-based natural key fallback is required
+- the feedback lookup page remains a reference-driven public form, not an open project export
+- the public GIS landing page is useful as a human-viewed reference only; trustworthy downloadable geometry was not verified
 
 Role in system:
 
@@ -1058,6 +1075,7 @@ Since MBPJ public data is currently easier to access as page content than as a d
 - ingest the approved-project table from the public SmartDev page
 - capture project reference and full project title text
 - optionally enrich with GIS land-use context
+- preserve the exact HTML response bodies and response metadata for each public page used in the run
 
 ## 17.2 Proposed acquisition method
 
@@ -1085,6 +1103,7 @@ Instead:
 - treat MBPJ as a text-first project register
 - later geocode or lot-match where possible
 - use MBPJ GIS layers for context
+- keep geometry nullable in the canonical application model until a trustworthy public geometry source is verified
 
 ## 17.5 MBPJ implementation objective for the next phase
 
@@ -1133,6 +1152,24 @@ The first MBPJ phase is successful when:
 - geometry handling is explicit:
   - either trusted map geometry is available and documented
   - or MBPJ remains text-first until a valid geometry source is secured
+
+### Current implementation update
+
+As of March 7, 2026 in this repository:
+
+- phase 1 MBPJ ingestion, context-geometry normalization, publish, and QA are implemented and verified end to end
+- the normalized MBPJ dataset is written to stage as repeatable Parquet outputs for:
+  - `mbpj_project_register.parquet`
+  - `mbpj_official_buildings.parquet`
+  - `mbpj_municipality_boundary.parquet`
+- dedicated MBPJ raw capture, re-normalization, publish, and QA scripts now exist
+- the API/search/stats layer supports MBPJ queries via `municipality=MBPJ`
+- the frontend can switch between MBJB and MBPJ, rendering MBPJ context-only geometry without assigning fake project polygons
+- verified MBPJ runtime outputs now include:
+  - `62` SmartDev project rows
+  - `57` official-building context polygons
+  - `1` municipality boundary polygon
+- MBPJ SmartDev project rows remain geometry-null because no direct public project-polygon source has been linked
 
 ## 18. Optional Building Footprint Integration
 
@@ -1388,7 +1425,7 @@ Acceptance:
 - no critical UI or data issues
 - deployment repeatable from docs
 
-## Milestone 7: MBPJ source acquisition and text-first normalization (`next`)
+## Milestone 7: MBPJ source acquisition and text-first normalization (`implemented and runtime-verified`)
 
 Deliverables:
 
@@ -1403,6 +1440,11 @@ Acceptance:
 - MBPJ ingestion is repeatable
 - a known MBPJ project can be found in the local app or API layer
 - the plan clearly records whether MBPJ geometry is trustworthy enough for public map rendering
+
+Current note:
+
+- the raw/source/stage pipeline and MBPJ load/search/stats code are implemented
+- runtime verification against a live PostGIS stack now passes in this repository, including local Docker Compose startup, MBPJ publish, QA, API checks, and tile exposure
 
 ## 24. Suggested Timeline
 
@@ -1506,19 +1548,15 @@ After the first MBJB release:
 
 ## 28. Immediate Next Build Steps
 
-MBJB implementation is complete enough that the next build steps should now focus on `MBPJ`.
+MBPJ phase 1 is now implemented as a context-geometry municipality.
 
-Execute in this order:
+The next build steps are now:
 
-1. verify the current MBPJ public source shape and access pattern
-2. document MBPJ licensing and republication constraints before exposing data publicly
-3. add MBPJ raw snapshot capture and run manifests
-4. normalize MBPJ project-register rows into the canonical application schema where fields exist
-5. create MBPJ search and stats outputs even if geometry is still null
-6. evaluate whether MBPJ GIS geometry can be linked safely and accurately
-7. only after that, decide whether MBPJ should ship as:
-   - a text-first searchable municipality
-   - or a full second mapped municipality
+1. continue monitoring SmartDev source drift, especially row count changes and blank reference-number rows
+2. validate MBPJ context-layer rendering interactively in the browser against the running local stack
+3. investigate whether MBPJ GIS exposes a stable direct public project-geometry source
+4. if such a source is verified, promote MBPJ from context-only rendering to project-level map geometry
+5. expand the same canonical municipality pattern to the next council
 
 ## 29. Recommended Decision
 

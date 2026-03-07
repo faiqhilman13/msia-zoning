@@ -1,10 +1,20 @@
-import type { Filters, LayerType } from "@/lib/types";
+import type { Filters, LayerType, MunicipalityCode } from "@/lib/types";
 
-const ALL_LAYERS: LayerType[] = [
-  "kebenaran_merancang",
-  "pelan_bangunan",
-  "kerja_tanah"
-];
+const LAYER_OPTIONS_BY_MUNICIPALITY: Record<
+  MunicipalityCode,
+  Array<{ key: LayerType; label: string }>
+> = {
+  MBJB: [
+    { key: "kebenaran_merancang", label: "Kebenaran Merancang" },
+    { key: "pelan_bangunan", label: "Pelan Bangunan" },
+    { key: "kerja_tanah", label: "Kerja Tanah" }
+  ],
+  MBPJ: [{ key: "approved_project_register", label: "Approved Register" }]
+};
+
+const ALL_LAYERS = Object.values(LAYER_OPTIONS_BY_MUNICIPALITY).flatMap((items) =>
+  items.map((item) => item.key)
+);
 
 function parseList(searchParams: URLSearchParams, key: string): string[] {
   return searchParams
@@ -66,7 +76,7 @@ function quoteCql(value: string) {
 
 export function buildTileFilter(filters: Filters) {
   const clauses: string[] = [];
-  if (filters.layerTypes.length && filters.layerTypes.length !== ALL_LAYERS.length) {
+  if (filters.layerTypes.length) {
     clauses.push(`layer_type IN (${filters.layerTypes.map(quoteCql).join(",")})`);
   }
   if (filters.statuses.length) {
@@ -98,10 +108,22 @@ export function hasActiveFilters(filters: Filters) {
   );
 }
 
-export const DEFAULT_FILTERS: Filters = {
-  layerTypes: ALL_LAYERS,
-  statuses: [],
-  years: [],
-  planningBlocks: [],
-  mukims: []
-};
+export function getLayerOptions(municipality: MunicipalityCode) {
+  return LAYER_OPTIONS_BY_MUNICIPALITY[municipality];
+}
+
+export function getDefaultLayerTypes(municipality: MunicipalityCode) {
+  return getLayerOptions(municipality).map((item) => item.key);
+}
+
+export function getDefaultFilters(municipality: MunicipalityCode): Filters {
+  return {
+    layerTypes: getDefaultLayerTypes(municipality),
+    statuses: [],
+    years: [],
+    planningBlocks: [],
+    mukims: []
+  };
+}
+
+export const DEFAULT_FILTERS: Filters = getDefaultFilters("MBJB");

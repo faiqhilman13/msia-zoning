@@ -31,11 +31,21 @@ docker compose up -d --build db tiles web
 .\.venv\Scripts\python.exe scripts\qa\run_mbjb_qa.py
 ```
 
+MBPJ text-first run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\ingest\run_mbpj_pipeline.py --run-label mbpj_phase1
+.\.venv\Scripts\python.exe scripts\publish\load_mbpj_postgis.py
+.\.venv\Scripts\python.exe scripts\qa\run_mbpj_qa.py
+```
+
 ## Verify services
 
 - App: `http://localhost:3001`
 - Tiles: `http://localhost:7800/index.json`
 - Stats API: `http://localhost:3001/api/v1/stats/overview`
+- MBPJ stats API: `http://localhost:3001/api/v1/stats/overview?municipality=MBPJ`
+- MBPJ search API: `http://localhost:3001/api/v1/search?q=damansara&municipality=MBPJ`
 - Source page: `http://localhost:3001/sources`
 
 ## Expected behavior
@@ -47,6 +57,7 @@ docker compose up -d --build db tiles web
 - clicking a result or polygon opens the detail drawer
 - planning block dots and labels appear when the planning-block overlay is enabled
 - clicking a planning block dot opens planning block context in the detail drawer
+- MBPJ data is queryable through the API as a text-first municipality even though it is not yet rendered on the public map
 
 ## Shutdown
 

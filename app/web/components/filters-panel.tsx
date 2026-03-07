@@ -1,11 +1,13 @@
 import clsx from "clsx";
 
-import type { FilterOptions, Filters, LayerType } from "@/lib/types";
+import { getLayerOptions } from "@/lib/filters";
+import type { FilterOptions, Filters, LayerType, MunicipalityCode } from "@/lib/types";
 
 type Props = {
+  municipality: MunicipalityCode;
   filters: Filters;
   options: FilterOptions;
-  showPlanningBlocks: boolean;
+  showPrimaryContext: boolean;
   showBoundary: boolean;
   onToggleLayer: (layer: LayerType) => void;
   onToggleValue: (
@@ -13,7 +15,7 @@ type Props = {
     value: string | number
   ) => void;
   onReset: () => void;
-  onTogglePlanningBlocks: () => void;
+  onTogglePrimaryContext: () => void;
   onToggleBoundary: () => void;
 };
 
@@ -22,30 +24,33 @@ function toggleClass(active: boolean, extra?: string) {
 }
 
 export function FiltersPanel({
+  municipality,
   filters,
   options,
-  showPlanningBlocks,
+  showPrimaryContext,
   showBoundary,
   onToggleLayer,
   onToggleValue,
   onReset,
-  onTogglePlanningBlocks,
+  onTogglePrimaryContext,
   onToggleBoundary
 }: Props) {
-  const layerOptions: Array<{ key: LayerType; label: string }> = [
-    { key: "kebenaran_merancang", label: "Kebenaran Merancang" },
-    { key: "pelan_bangunan", label: "Pelan Bangunan" },
-    { key: "kerja_tanah", label: "Kerja Tanah" }
-  ];
+  const layerOptions = getLayerOptions(municipality);
+  const heroTitle =
+    municipality === "MBPJ" ? "Petaling Jaya Development Register" : "Johor Bahru Development Map";
+  const heroBody =
+    municipality === "MBPJ"
+      ? "Public MBPJ SmartDev register rows are searchable alongside MBPJ context geometry from the municipal ArcGIS service."
+      : "Public MBJB development polygons served from PostGIS tiles, with safe public fields only.";
+  const primaryContextLabel = municipality === "MBPJ" ? "Official buildings" : "Planning blocks";
+  const boundaryLabel = municipality === "MBPJ" ? "MBPJ boundary" : "MBJB boundary";
 
   return (
     <section className="panel left-panel">
       <div className="hero-copy">
-        <p className="eyebrow">MBJB MVP</p>
-        <h1>Johor Bahru Development Map</h1>
-        <p>
-          Public MBJB development polygons served from PostGIS tiles, with safe public fields only.
-        </p>
+        <p className="eyebrow">{municipality}</p>
+        <h1>{heroTitle}</h1>
+        <p>{heroBody}</p>
       </div>
 
       <div className="filter-group">
@@ -105,24 +110,26 @@ export function FiltersPanel({
         </div>
       </div>
 
-      <div className="filter-group">
-        <p className="eyebrow">Planning Block</p>
-        <div className="chip-grid">
-          {options.planningBlocks.map((item) => {
-            const active = filters.planningBlocks.includes(item);
-            return (
-              <button
-                key={item}
-                className={toggleClass(active)}
-                onClick={() => onToggleValue("planningBlocks", item)}
-                type="button"
-              >
-                {item}
-              </button>
-            );
-          })}
+      {options.planningBlocks.length ? (
+        <div className="filter-group">
+          <p className="eyebrow">Planning Block</p>
+          <div className="chip-grid">
+            {options.planningBlocks.map((item) => {
+              const active = filters.planningBlocks.includes(item);
+              return (
+                <button
+                  key={item}
+                  className={toggleClass(active)}
+                  onClick={() => onToggleValue("planningBlocks", item)}
+                  type="button"
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="filter-group">
         <p className="eyebrow">Mukim</p>
@@ -146,11 +153,11 @@ export function FiltersPanel({
       <div className="filter-group">
         <p className="eyebrow">Context Overlays</p>
         <div className="chip-grid">
-          <button className={toggleClass(showPlanningBlocks)} type="button" onClick={onTogglePlanningBlocks}>
-            Planning blocks
+          <button className={toggleClass(showPrimaryContext)} type="button" onClick={onTogglePrimaryContext}>
+            {primaryContextLabel}
           </button>
           <button className={toggleClass(showBoundary)} type="button" onClick={onToggleBoundary}>
-            MBJB boundary
+            {boundaryLabel}
           </button>
         </div>
       </div>
