@@ -32,6 +32,14 @@ MUNICIPALITY = "MBPJ"
 SOURCE_LAYER = "approved_project_register"
 NAMESPACE = uuid.UUID("28b31545-c9df-4a8d-9f69-0ff5f2d9858b")
 EXPECTED_PROJECT_COUNT = 62
+SENSITIVE_RESPONSE_HEADERS = {
+    "authorization",
+    "cookie",
+    "proxy-authorization",
+    "set-cookie",
+    "x-csrf-token",
+    "x-xsrf-token",
+}
 
 
 @dataclass(frozen=True)
@@ -147,6 +155,16 @@ def write_json(path: Path, payload: dict[str, Any]) -> SourceArtifact:
     return _write_bytes(path, content, artifact_type="json")
 
 
+def sanitize_response_headers(headers: dict[str, str]) -> dict[str, str]:
+    sanitized: dict[str, str] = {}
+    for name, value in headers.items():
+        if name.lower() in SENSITIVE_RESPONSE_HEADERS:
+            sanitized[name] = "[redacted]"
+        else:
+            sanitized[name] = value
+    return sanitized
+
+
 def capture_source_page(client: MbpjClient, run: PipelineRun, page: SourcePageConfig) -> str:
     response = client.fetch_page(page)
     page_root = ensure_directory(run.raw_root / page.slug)
@@ -164,7 +182,7 @@ def capture_source_page(client: MbpjClient, run: PipelineRun, page: SourcePageCo
                 "status_code": response.status_code,
                 "fetched_at": utc_now().isoformat(),
                 "content_type": response.headers.get("content-type"),
-                "headers": dict(response.headers),
+                "headers": sanitize_response_headers(dict(response.headers)),
                 "sha256": hashlib.sha256(response.content).hexdigest(),
             },
         )

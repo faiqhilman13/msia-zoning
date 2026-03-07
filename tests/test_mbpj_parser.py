@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from malaysia_permits_map.etl.mbpj import PipelineRun, normalize_project_register
+from malaysia_permits_map.etl.mbpj import PipelineRun, normalize_project_register, sanitize_response_headers
 from malaysia_permits_map.utils.text import derive_mbpj_public_title, extract_mbpj_mukim, extract_reference_year
 
 
@@ -41,3 +41,19 @@ def test_mbpj_text_helpers_strip_party_text_and_extract_fields() -> None:
     assert derive_mbpj_public_title(title).endswith("SELANGOR DARUL EHSAN")
     assert extract_mbpj_mukim("... MUKIM SUNGAI BULUH, DAERAH PETALING ...") == "Sungai Buloh"
     assert extract_reference_year("MBPJ/040100/T/P23/1/PJU1A/0232/2023/SMARTDEV") == 2023
+
+
+def test_sanitize_response_headers_redacts_sensitive_values() -> None:
+    sanitized = sanitize_response_headers(
+        {
+            "content-type": "text/html; charset=UTF-8",
+            "set-cookie": "session=secret",
+            "x-xsrf-token": "token-value",
+            "server": "Microsoft-IIS/10.0",
+        }
+    )
+
+    assert sanitized["content-type"] == "text/html; charset=UTF-8"
+    assert sanitized["server"] == "Microsoft-IIS/10.0"
+    assert sanitized["set-cookie"] == "[redacted]"
+    assert sanitized["x-xsrf-token"] == "[redacted]"

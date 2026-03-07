@@ -1,6 +1,7 @@
 services:
   db:
     image: postgis/postgis:16-3.5
+    platform: ${DB_PLATFORM:-linux/amd64}
     container_name: malaysia-permits-map-db
     environment:
       POSTGRES_DB: permits
