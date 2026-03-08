@@ -15,6 +15,12 @@ MBPJ_MUKIM_RE = re.compile(
 MBPJ_REFERENCE_YEAR_RE = re.compile(r"/(20\d{2})/(?:SMARTDEV|DECIS)\b", re.IGNORECASE)
 MBPJ_FALLBACK_YEAR_RE = re.compile(r"/(20\d{2})(?:/|$)")
 MBPJ_PARTY_TAIL_MARKERS = (" UNTUK :", " UNTUK:", " UNTUK ", " TETUAN ")
+MBPJ_TRAILING_PARTY_RE = re.compile(
+    r"(?is)^(?P<public>.*)(?:[\s.;,:-]+)(?:UNTUK(?:\s+TETUAN)?|TETUAN)\s*:?\s*(?P<party>.+)$"
+)
+MBPJ_TRAILING_UNTUK_RE = re.compile(r"(?i)(?:[\s.;,:-]+)UNTUK\s*:?\s*$")
+MBPJ_PARTY_NOTE_RE = re.compile(r"(?i)\s*(?:\(|,)?\s*NO\.?\s*RUJUKAN\b.*$")
+MBPJ_PARTY_PREFIX_RE = re.compile(r"(?i)^TETUAN\s+")
 
 MUKIM_CANONICAL_MAP = {
     "BANDAR": "Bandar Johor Bahru",
@@ -81,6 +87,18 @@ def split_trailing_party_text(title: str | None) -> tuple[str | None, str | None
     if not cleaned:
         return None, None
 
+    trailing_match = MBPJ_TRAILING_PARTY_RE.match(cleaned)
+    if trailing_match:
+        public_title = clean_whitespace(
+            MBPJ_TRAILING_UNTUK_RE.sub("", trailing_match.group("public")).rstrip(" .,:;-")
+        )
+        party_text = clean_whitespace(trailing_match.group("party"))
+        if party_text:
+            party_text = clean_whitespace(MBPJ_PARTY_NOTE_RE.sub("", party_text))
+            party_text = clean_whitespace(MBPJ_PARTY_PREFIX_RE.sub("", party_text))
+        if public_title:
+            return public_title, party_text
+
     upper = cleaned.upper()
     split_index: int | None = None
     split_marker = ""
@@ -104,6 +122,9 @@ def split_trailing_party_text(title: str | None) -> tuple[str | None, str | None
 
     public_title = clean_whitespace(cleaned[:split_index])
     party_text = clean_whitespace(cleaned[split_index + len(split_marker) :].lstrip(" :-,"))
+    if party_text:
+        party_text = clean_whitespace(MBPJ_PARTY_NOTE_RE.sub("", party_text))
+        party_text = clean_whitespace(MBPJ_PARTY_PREFIX_RE.sub("", party_text))
     if not public_title:
         return cleaned, None
     return public_title, party_text
@@ -143,14 +164,14 @@ def infer_application_type(title: str | None, fallback: str = "Project Register"
     text = (clean_whitespace(title) or "").upper()
     if not text:
         return fallback
-    if "KEBENARAN MERANCANG" in text:
-        return "Kebenaran Merancang"
     if "PELAN BANGUNAN" in text:
         return "Pelan Bangunan"
     if "KERJA TANAH" in text:
         return "Kerja Tanah"
     if "KERJA KEJURUTERAAN" in text:
         return "Kerja Kejuruteraan"
+    if any(token in text for token in ("MERANCANG", "AKTA PERANCANGAN BANDAR DAN DESA", "SEKSYEN 21")):
+        return "Kebenaran Merancang"
     return fallback
 
 

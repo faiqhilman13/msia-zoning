@@ -15,6 +15,8 @@ Important defaults:
 - web app external port: `3001`
 - PostGIS: `localhost:5432`
 - pg_tileserv: `localhost:7800`
+- MBJB default viewport: `103.7414`, `1.4927`, zoom `11`
+- MBPJ default viewport: `101.6237`, `3.1073`, zoom `12`
 
 ## Start the stack
 
@@ -48,6 +50,12 @@ MBPJ text-first run:
 - MBPJ search API: `http://localhost:3001/api/v1/search?q=damansara&municipality=MBPJ`
 - Source page: `http://localhost:3001/sources`
 
+If the browser console shows tile `404` / `500` responses immediately after a pull, migration, or database container recreate, restart `pg_tileserv` so it refreshes its layer cache:
+
+```powershell
+docker compose restart tiles
+```
+
 ## Expected behavior
 
 - map renders MBJB development polygons from tiles
@@ -57,7 +65,9 @@ MBPJ text-first run:
 - clicking a result or polygon opens the detail drawer
 - planning block dots and labels appear when the planning-block overlay is enabled
 - clicking a planning block dot opens planning block context in the detail drawer
-- MBPJ data is queryable through the API as a text-first municipality even though it is not yet rendered on the public map
+- MBPJ data is queryable through the API as a text-first municipality
+- the MBPJ view renders official-building polygons and the municipal boundary as fixed context overlays
+- MBPJ project filters update search, stats, and detail, but do not filter the fixed context map overlay
 
 ## Shutdown
 

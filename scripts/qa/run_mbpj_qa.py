@@ -119,8 +119,58 @@ def build_report(stage_root: Path) -> dict:
     return report
 
 
-def add_db_checks(report: dict, database_url: str) -> dict:
+def relation_exists(cur: psycopg.Cursor, relation_name: str) -> bool:
+    cur.execute("SELECT to_regclass(%s)", (relation_name,))
+    return cur.fetchone()[0] is not None
+
+
+def add_db_checks(report: dict, database_url: str, ingest_run_id: str) -> dict:
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
+        if not relation_exists(cur, "core.development_applications"):
+            report["checks"].append(
+                {
+                    "name": "db_core_development_applications_available",
+                    "status": "warn",
+                    "observed": "missing relation core.development_applications",
+                }
+            )
+            return report
+
+        cur.execute(
+            """
+            SELECT count(*)
+            FROM core.development_applications
+            WHERE source_municipality = 'MBPJ' AND ingest_run_id = %s
+            """,
+            (ingest_run_id,),
+        )
+        current_run_count = cur.fetchone()[0]
+        report["checks"].append(
+            {
+                "name": "db_current_run_application_count",
+                "status": "pass" if current_run_count == EXPECTED_PROJECT_COUNT else "warn",
+                "observed": current_run_count,
+                "expected": EXPECTED_PROJECT_COUNT,
+            }
+        )
+
+        cur.execute(
+            """
+            SELECT count(*)
+            FROM core.development_applications
+            WHERE source_municipality = 'MBPJ' AND ingest_run_id <> %s
+            """,
+            (ingest_run_id,),
+        )
+        stale_count = cur.fetchone()[0]
+        report["checks"].append(
+            {
+                "name": "db_stale_mbpj_rows",
+                "status": "pass" if stale_count == 0 else "fail",
+                "observed": stale_count,
+            }
+        )
+
         for reference in (
             "MBPJ/040100/T/P23/1/PJS5/0015/2022/SMARTDEV",
             "MBPJ/040100/T/P23/1/PJU1A/0232/2023/SMARTDEV",
@@ -129,9 +179,9 @@ def add_db_checks(report: dict, database_url: str) -> dict:
                 """
                 SELECT count(*)
                 FROM core.development_applications
-                WHERE source_municipality = 'MBPJ' AND reference_no = %s
+                WHERE source_municipality = 'MBPJ' AND ingest_run_id = %s AND reference_no = %s
                 """,
-                (reference,),
+                (ingest_run_id, reference),
             )
             found = cur.fetchone()[0]
             report["checks"].append(
@@ -142,37 +192,55 @@ def add_db_checks(report: dict, database_url: str) -> dict:
                 }
             )
 
-        cur.execute(
-            """
-            SELECT count(*)
-            FROM core.context_features
-            WHERE municipality_code = 'MBPJ' AND context_type = 'official_building'
-            """
-        )
-        context_count = cur.fetchone()[0]
-        report["checks"].append(
-            {
-                "name": "db_context_features_official_building_count",
-                "status": "pass" if context_count > 0 else "warn",
-                "observed": context_count,
-            }
-        )
+        if relation_exists(cur, "core.context_features"):
+            cur.execute(
+                """
+                SELECT count(*)
+                FROM core.context_features
+                WHERE municipality_code = 'MBPJ' AND context_type = 'official_building'
+                """
+            )
+            context_count = cur.fetchone()[0]
+            report["checks"].append(
+                {
+                    "name": "db_context_features_official_building_count",
+                    "status": "pass" if context_count > 0 else "warn",
+                    "observed": context_count,
+                }
+            )
+        else:
+            report["checks"].append(
+                {
+                    "name": "db_context_features_official_building_count",
+                    "status": "warn",
+                    "observed": "missing relation core.context_features",
+                }
+            )
 
-        cur.execute(
-            """
-            SELECT count(*)
-            FROM core.admin_boundaries
-            WHERE municipality_code = 'MBPJ' AND boundary_type = 'municipality'
-            """
-        )
-        boundary_count = cur.fetchone()[0]
-        report["checks"].append(
-            {
-                "name": "db_context_boundary_count",
-                "status": "pass" if boundary_count > 0 else "warn",
-                "observed": boundary_count,
-            }
-        )
+        if relation_exists(cur, "core.admin_boundaries"):
+            cur.execute(
+                """
+                SELECT count(*)
+                FROM core.admin_boundaries
+                WHERE municipality_code = 'MBPJ' AND boundary_type = 'municipality'
+                """
+            )
+            boundary_count = cur.fetchone()[0]
+            report["checks"].append(
+                {
+                    "name": "db_context_boundary_count",
+                    "status": "pass" if boundary_count > 0 else "warn",
+                    "observed": boundary_count,
+                }
+            )
+        else:
+            report["checks"].append(
+                {
+                    "name": "db_context_boundary_count",
+                    "status": "warn",
+                    "observed": "missing relation core.admin_boundaries",
+                }
+            )
     return report
 
 
@@ -186,7 +254,7 @@ def main() -> None:
     raw_root = corresponding_raw_root(stage_root)
     manifest = json.loads((raw_root / "manifest.json").read_text(encoding="utf-8"))
     report = build_report(stage_root)
-    report = add_db_checks(report, args.database_url)
+    report = add_db_checks(report, args.database_url, manifest["ingest_run_id"])
     report["ingest_run_id"] = manifest["ingest_run_id"]
     report["stage_root"] = str(stage_root)
 

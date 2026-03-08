@@ -4,7 +4,10 @@ import math
 
 from malaysia_permits_map.utils.text import (
     clean_whitespace,
+    derive_mbpj_public_title,
     derive_public_title,
+    extract_mbpj_party_text,
+    infer_application_type,
     normalize_mukim,
     normalize_planning_block,
     normalize_status,
@@ -40,3 +43,18 @@ def test_normalize_mukim_fixes_case_and_common_typos() -> None:
     assert normalize_mukim("PELNTONG") == "Plentong"
     assert normalize_mukim("BANDAR JB") == "Bandar Johor Bahru"
     assert normalize_mukim("SUNGAI TIRAM") == "Sungai Tiram"
+
+
+def test_mbpj_title_helpers_strip_trailing_party_markers_and_notes() -> None:
+    title = (
+        "PERMOHONAN KEBENARAN MERANCANG BAGI CADANGAN PEMBANGUNAN DI ATAS LOT 81117, "
+        "ARA DAMANSARA, MUKIM DAMANSARA, DAERAH PETALING, SELANGOR DARUL EHSAN. UNTUK: "
+        "LUSTER ARA SDN. BHD. (NO RUJUKAN PELAN LULUS: MBPJ/TEST/123)"
+    )
+    assert derive_mbpj_public_title(title).endswith("SELANGOR DARUL EHSAN")
+    assert extract_mbpj_party_text(title) == "LUSTER ARA SDN. BHD."
+
+
+def test_infer_application_type_handles_planning_variants_and_typos() -> None:
+    assert infer_application_type("PERMOHONAN MERANCANG BAGI CADANGAN MEMBINA RUMAH") == "Kebenaran Merancang"
+    assert infer_application_type("PERMOHONAN KENENARAN MERANCANG BAGI CADANGAN TAMBAHAN") == "Kebenaran Merancang"

@@ -42,6 +42,10 @@ export function FiltersPanel({
     municipality === "MBPJ"
       ? "Public MBPJ SmartDev register rows are searchable alongside MBPJ context geometry from the municipal ArcGIS service."
       : "Public MBJB development polygons served from PostGIS tiles, with safe public fields only.";
+  const filterBehaviorNote =
+    municipality === "MBPJ"
+      ? "These filters narrow the MBPJ register, stats, search, and detail drawer. The map remains a fixed municipal context overlay until direct project geometry is available."
+      : null;
   const primaryContextLabel = municipality === "MBPJ" ? "Official buildings" : "Planning blocks";
   const boundaryLabel = municipality === "MBPJ" ? "MBPJ boundary" : "MBJB boundary";
 
@@ -51,6 +55,7 @@ export function FiltersPanel({
         <p className="eyebrow">{municipality}</p>
         <h1>{heroTitle}</h1>
         <p>{heroBody}</p>
+        {filterBehaviorNote ? <p className="muted">{filterBehaviorNote}</p> : null}
       </div>
 
       <div className="filter-group">

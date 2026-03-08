@@ -19,9 +19,13 @@ Thumbs.db
 app/web/.env.local
 data/raw/mbjb/*
 !data/raw/mbjb/.gitkeep
+data/raw/mbpj/*
+!data/raw/mbpj/.gitkeep
 data/raw/**/response-metadata.json
 data/stage/mbjb/*
 !data/stage/mbjb/.gitkeep
+data/stage/mbpj/*
+!data/stage/mbpj/.gitkeep
 data/publish/*
 !data/publish/.gitkeep
 docker-data/

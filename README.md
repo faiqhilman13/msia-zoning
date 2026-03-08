@@ -31,6 +31,7 @@ The current local stack ships:
 - Conservative public-field allowlist that does **not** expose `PEMILIK` in the UI
 - QA checks for counts, required fields, geometry validity, extent checks, and known references
 - MBPJ API/search/stats support with SmartDev project geometry kept nullable while MBPJ context layers render official buildings and the municipality boundary
+- MBPJ project filters currently narrow the text-first register, stats, search, and detail responses while the map remains a fixed context overlay
 
 ## Stack
 
@@ -89,6 +90,12 @@ docker compose up -d --build db tiles web
 - Tile index: `http://localhost:7800/index.json`
 - MBPJ stats API: `http://localhost:3001/api/v1/stats/overview?municipality=MBPJ`
 - MBPJ search API: `http://localhost:3001/api/v1/search?q=damansara&municipality=MBPJ`
+
+If you pull schema changes or recreate the database container and then see tile `404` / `500` errors in the browser console, restart `pg_tileserv`:
+
+```powershell
+docker compose restart tiles
+```
 
 ## Common commands
 

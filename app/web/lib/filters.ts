@@ -89,11 +89,7 @@ export function buildTileFilter(filters: Filters) {
     clauses.push(`mukim IN (${filters.mukims.map(quoteCql).join(",")})`);
   }
   if (filters.years.length) {
-    clauses.push(
-      `(${filters.years
-        .map((year) => `(application_year = ${year} OR approval_year = ${year})`)
-        .join(" OR ")})`
-    );
+    clauses.push(`COALESCE(approval_year, application_year) IN (${filters.years.join(",")})`);
   }
   return clauses.join(" AND ");
 }

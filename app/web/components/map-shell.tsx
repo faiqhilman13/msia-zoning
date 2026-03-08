@@ -10,7 +10,7 @@ import { MapCanvas } from "@/components/map-canvas";
 import { SearchBox } from "@/components/search-box";
 import { StatsBar } from "@/components/stats-bar";
 import { getDefaultFilters } from "@/lib/filters";
-import { buildTilesUrl } from "@/lib/map";
+import { buildTilesUrl, getDefaultViewport } from "@/lib/map";
 import type {
   FeatureDetail,
   FilterOptions,
@@ -33,9 +33,7 @@ type SelectedTarget =
   | null;
 
 function defaultFocusPoint(municipality: MunicipalityCode) {
-  return municipality === "MBPJ"
-    ? { lon: 101.6237, lat: 3.1073, zoom: 12 }
-    : { lon: 103.7414, lat: 1.4927, zoom: 11 };
+  return getDefaultViewport(municipality);
 }
 
 function parseSelectedMunicipality(searchParams: { get(name: string): string | null }): MunicipalityCode {
@@ -193,6 +191,7 @@ export function MapShell() {
             })}
           </div>
           <SearchBox
+            key={municipality}
             municipality={municipality}
             onSelect={(result: SearchResult) => {
               setSelectedTarget({ kind: "application", id: result.applicationId });

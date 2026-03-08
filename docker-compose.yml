@@ -23,6 +23,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+        restart: true
     environment:
       DATABASE_URL: ${PGTILESERV_DATABASE_URL}
       TS_HTTPPORT: 7800
@@ -39,8 +40,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+        restart: true
       tiles:
         condition: service_started
+        restart: true
     environment:
       APP_ENV: ${APP_ENV}
       DATABASE_URL: postgresql://postgres:postgres@db:5432/permits
@@ -49,6 +52,9 @@ services:
       NEXT_PUBLIC_DEFAULT_LAT: ${NEXT_PUBLIC_DEFAULT_LAT}
       NEXT_PUBLIC_DEFAULT_LON: ${NEXT_PUBLIC_DEFAULT_LON}
       NEXT_PUBLIC_DEFAULT_ZOOM: ${NEXT_PUBLIC_DEFAULT_ZOOM}
+      NEXT_PUBLIC_MBPJ_DEFAULT_LAT: ${NEXT_PUBLIC_MBPJ_DEFAULT_LAT}
+      NEXT_PUBLIC_MBPJ_DEFAULT_LON: ${NEXT_PUBLIC_MBPJ_DEFAULT_LON}
+      NEXT_PUBLIC_MBPJ_DEFAULT_ZOOM: ${NEXT_PUBLIC_MBPJ_DEFAULT_ZOOM}
     ports:
       - "${WEB_PORT:-3001}:3000"
 

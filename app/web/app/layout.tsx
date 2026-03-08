@@ -19,7 +19,10 @@ const serifFont = Fraunces({
 export const metadata: Metadata = {
   title: "Malaysia Permits Map",
   description:
-    "Municipal development data stack for MBJB map-enabled polygons and MBPJ text-first project register support."
+    "Municipal development data stack for MBJB map-enabled polygons and MBPJ text-first project register support.",
+  icons: {
+    icon: "/icon.svg"
+  }
 };
 
 export default function RootLayout({

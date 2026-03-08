@@ -16,6 +16,7 @@ if str(SRC) not in sys.path:
 
 from malaysia_permits_map.config import CONFIG
 from malaysia_permits_map.db.sql import apply_sql_file
+from malaysia_permits_map.etl.mbpj import SOURCE_SYSTEM
 
 
 GEOMETRY_STAGE_FILES = {
@@ -45,8 +46,29 @@ def load_stage_df(stage_root: Path) -> pd.DataFrame:
 def load_context_gdf(stage_root: Path, layer_slug: str) -> gpd.GeoDataFrame:
     path = stage_root / GEOMETRY_STAGE_FILES[layer_slug]
     if not path.exists():
-        return gpd.GeoDataFrame()
-    return gpd.read_parquet(path)
+        raise FileNotFoundError(f"Missing MBPJ context stage file: {path}")
+    frame = gpd.read_parquet(path)
+    if frame.empty:
+        raise ValueError(f"MBPJ context stage file is empty: {path}")
+    return frame
+
+
+def normalize_artifact_relative_path(raw_root: Path, value: str) -> str:
+    path_text = str(value).replace("\\", "/").strip()
+    if not path_text:
+        return path_text
+
+    candidate = Path(path_text)
+    if not candidate.is_absolute():
+        return path_text.lstrip("./")
+
+    try:
+        return candidate.relative_to(raw_root).as_posix()
+    except ValueError:
+        marker = f"/{raw_root.name}/"
+        if marker in path_text:
+            return path_text.split(marker, 1)[1].lstrip("/")
+        return candidate.name
 
 
 def to_native(value):
@@ -114,7 +136,7 @@ def insert_meta(conn: psycopg.Connection, raw_root: Path, stage_root: Path, stat
                 (
                     ingest_run_id,
                     artifact["artifact_type"],
-                    artifact["relative_path"],
+                    normalize_artifact_relative_path(raw_root, artifact["relative_path"]),
                     artifact["file_size_bytes"],
                     artifact["sha256"],
                 ),
@@ -153,11 +175,25 @@ def load_stage_and_core(conn: psycopg.Connection, frame: pd.DataFrame, ingest_ru
     application_ids = [str(application_id) for application_id in frame["application_id"].tolist()]
 
     with conn.cursor() as cur:
-        cur.execute("DELETE FROM stage.mbpj_project_register WHERE ingest_run_id = %s", (ingest_run_id,))
+        cur.execute("DELETE FROM stage.mbpj_project_register")
         if application_ids:
             cur.execute(
-                "DELETE FROM stage.mbpj_project_register WHERE application_id = ANY(%s)",
-                (application_ids,),
+                """
+                DELETE FROM core.development_applications
+                WHERE source_municipality = 'MBPJ'
+                  AND source_system = %s
+                  AND application_id <> ALL(%s::uuid[])
+                """,
+                (SOURCE_SYSTEM, application_ids),
+            )
+        else:
+            cur.execute(
+                """
+                DELETE FROM core.development_applications
+                WHERE source_municipality = 'MBPJ'
+                  AND source_system = %s
+                """,
+                (SOURCE_SYSTEM,),
             )
 
         for _, row in frame.iterrows():
@@ -520,6 +556,11 @@ def mark_run(conn: psycopg.Connection, ingest_run_id: str, status: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Load the latest MBPJ stage output into PostGIS.")
     parser.add_argument("--stage-root", help="Specific stage run directory. Defaults to the latest run.")
+    parser.add_argument(
+        "--skip-context",
+        action="store_true",
+        help="Skip refreshing MBPJ context geometry. Use this only for older text-only runs.",
+    )
     args = parser.parse_args()
 
     stage_root = Path(args.stage_root) if args.stage_root else latest_stage_root()
@@ -531,7 +572,8 @@ def main() -> None:
         ingest_run_id, _manifest = insert_meta(conn, raw_root, stage_root, status="publishing")
         load_raw_table(conn, frame, ingest_run_id)
         load_stage_and_core(conn, frame, ingest_run_id)
-        load_context(conn, stage_root, ingest_run_id)
+        if not args.skip_context:
+            load_context(conn, stage_root, ingest_run_id)
         mark_run(conn, ingest_run_id, "published")
 
     print(f"Loaded MBPJ run {stage_root.name} into PostGIS")

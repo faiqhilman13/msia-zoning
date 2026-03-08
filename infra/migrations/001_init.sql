@@ -366,6 +366,17 @@ CREATE TABLE IF NOT EXISTS core.search_documents (
     UNIQUE (application_id)
 );
 
+DROP VIEW IF EXISTS marts.stats_by_year;
+DROP VIEW IF EXISTS marts.stats_by_status;
+DROP VIEW IF EXISTS marts.stats_by_layer;
+DROP VIEW IF EXISTS marts.stats_overview;
+DROP VIEW IF EXISTS marts.mbpj_context_boundaries;
+DROP VIEW IF EXISTS marts.mbpj_context_buildings;
+DROP VIEW IF EXISTS marts.mbjb_context_boundaries;
+DROP VIEW IF EXISTS marts.mbjb_context_planning_blocks;
+DROP VIEW IF EXISTS marts.mbjb_public_features;
+DROP VIEW IF EXISTS marts.public_applications;
+
 CREATE OR REPLACE VIEW marts.public_applications AS
 SELECT
     a.application_id,

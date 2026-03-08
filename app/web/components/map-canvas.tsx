@@ -7,8 +7,20 @@ import { GeoJsonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import maplibregl, { type Map } from "maplibre-gl";
 
-import { boundariesUrl, contextBuildingsUrl, layerColors, planningBlocksUrl } from "@/lib/map";
+import {
+  boundariesUrl,
+  contextBuildingsUrl,
+  getDefaultViewport,
+  layerColors,
+  planningBlocksUrl
+} from "@/lib/map";
 import type { HoverState, LayerType, MunicipalityCode, PlanningBlockPoint } from "@/lib/types";
+
+const VECTOR_TILE_LOAD_OPTIONS = {
+  mvt: {
+    shape: "geojson" as const
+  }
+};
 
 type FocusPoint = {
   lon: number;
@@ -90,24 +102,13 @@ export function MapCanvas({
       return;
     }
 
-    const defaultLon =
-      municipality === "MBPJ"
-        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_LON ?? 101.6237)
-        : Number(process.env.NEXT_PUBLIC_DEFAULT_LON ?? 103.7414);
-    const defaultLat =
-      municipality === "MBPJ"
-        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_LAT ?? 3.1073)
-        : Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? 1.4927);
-    const defaultZoom =
-      municipality === "MBPJ"
-        ? Number(process.env.NEXT_PUBLIC_MBPJ_DEFAULT_ZOOM ?? 12)
-        : Number(process.env.NEXT_PUBLIC_DEFAULT_ZOOM ?? 11);
+    const defaultViewport = getDefaultViewport(municipality);
 
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? "https://demotiles.maplibre.org/style.json",
-      center: [defaultLon, defaultLat],
-      zoom: defaultZoom,
+      center: [defaultViewport.lon, defaultViewport.lat],
+      zoom: defaultViewport.zoom,
       pitch: 34,
       bearing: -7,
       attributionControl: false
@@ -152,6 +153,7 @@ export function MapCanvas({
         ? new MVTLayer({
             id: `development-${tilesUrl}`,
             data: tilesUrl,
+            loadOptions: VECTOR_TILE_LOAD_OPTIONS,
             minZoom: 0,
             maxZoom: 22,
             pickable: true,
@@ -228,6 +230,7 @@ export function MapCanvas({
     const planningLayer = new MVTLayer({
       id: "planning-blocks",
       data: planningBlocksUrl(),
+      loadOptions: VECTOR_TILE_LOAD_OPTIONS,
       visible: municipality === "MBJB" && showPrimaryContext,
       pickable: false,
       renderSubLayers: (props) =>
@@ -288,6 +291,7 @@ export function MapCanvas({
     const contextBuildingsLayer = new MVTLayer({
       id: "mbpj-context-buildings",
       data: contextBuildingsUrl(),
+      loadOptions: VECTOR_TILE_LOAD_OPTIONS,
       visible: municipality === "MBPJ" && showPrimaryContext,
       pickable: false,
       renderSubLayers: (props) =>
@@ -305,6 +309,7 @@ export function MapCanvas({
     const boundaryLayer = new MVTLayer({
       id: `${municipality.toLowerCase()}-boundary`,
       data: boundariesUrl(municipality),
+      loadOptions: VECTOR_TILE_LOAD_OPTIONS,
       visible: showBoundary,
       pickable: false,
       renderSubLayers: (props) =>
@@ -345,7 +350,7 @@ export function MapCanvas({
       <div ref={containerRef} className="map-canvas" />
       <div className="map-overlay">
         {municipality === "MBPJ"
-          ? "MBPJ SmartDev rows stay text-first. The map shows MBPJ official-building context polygons and the municipal boundary from the public ArcGIS service."
+          ? "MBPJ SmartDev rows stay text-first. The map shows fixed MBPJ official-building and boundary context from the public ArcGIS service, while the project filters update the register stats, search, and detail drawer."
           : "MBJB polygons are rendered from PostGIS vector tiles. Planning block labels and dots sit on top of the GeoJB planning block overlay; click a dot to inspect planning block context."}
       </div>
     </div>

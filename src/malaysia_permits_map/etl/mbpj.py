@@ -139,20 +139,25 @@ class MbpjClient:
         return self._request(page.url)
 
 
-def _write_bytes(path: Path, content: bytes, artifact_type: str | None = None) -> SourceArtifact:
+def _write_bytes(
+    path: Path, content: bytes, artifact_type: str | None = None, relative_to: Path | None = None
+) -> SourceArtifact:
     ensure_directory(path.parent)
     path.write_bytes(content)
+    relative_path = path
+    if relative_to is not None:
+        relative_path = path.relative_to(relative_to)
     return SourceArtifact(
         artifact_type=artifact_type or (path.suffix.lstrip(".") or "file"),
-        relative_path=str(path),
+        relative_path=relative_path.as_posix(),
         sha256=hashlib.sha256(content).hexdigest(),
         file_size_bytes=len(content),
     )
 
 
-def write_json(path: Path, payload: dict[str, Any]) -> SourceArtifact:
+def write_json(path: Path, payload: dict[str, Any], relative_to: Path | None = None) -> SourceArtifact:
     content = orjson.dumps(payload, option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS)
-    return _write_bytes(path, content, artifact_type="json")
+    return _write_bytes(path, content, artifact_type="json", relative_to=relative_to)
 
 
 def sanitize_response_headers(headers: dict[str, str]) -> dict[str, str]:
@@ -171,7 +176,9 @@ def capture_source_page(client: MbpjClient, run: PipelineRun, page: SourcePageCo
     html_path = page_root / "response.html"
     metadata_path = page_root / "response-metadata.json"
 
-    run.artifacts.append(_write_bytes(html_path, response.content, artifact_type="html"))
+    run.artifacts.append(
+        _write_bytes(html_path, response.content, artifact_type="html", relative_to=run.raw_root)
+    )
     run.artifacts.append(
         write_json(
             metadata_path,
@@ -185,6 +192,7 @@ def capture_source_page(client: MbpjClient, run: PipelineRun, page: SourcePageCo
                 "headers": sanitize_response_headers(dict(response.headers)),
                 "sha256": hashlib.sha256(response.content).hexdigest(),
             },
+            relative_to=run.raw_root,
         )
     )
 
@@ -255,7 +263,7 @@ def _parse_project_rows(homepage_html: str, run: PipelineRun) -> list[dict[str, 
                 "reference_no": reference_no,
                 "reference_no_alt": None,
                 "title": title,
-                "application_type": infer_application_type(title),
+                "application_type": infer_application_type(title, fallback="Kebenaran Merancang"),
                 "current_status": "Diluluskan",
                 "status_raw": "Diluluskan",
                 "application_year": extract_reference_year(reference_no),
@@ -302,7 +310,9 @@ def normalize_project_register(run: PipelineRun, homepage_html: str) -> pd.DataF
 
     extract_root = ensure_directory(run.raw_root / SOURCE_LAYER)
     ensure_directory(run.stage_root)
-    run.artifacts.append(write_json(extract_root / "projects-extracted.json", {"rows": rows}))
+    run.artifacts.append(
+        write_json(extract_root / "projects-extracted.json", {"rows": rows}, relative_to=run.raw_root)
+    )
 
     frame = pd.DataFrame(rows)
     frame.to_parquet(run.stage_root / "mbpj_project_register.parquet", index=False)

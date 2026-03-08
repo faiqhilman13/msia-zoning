@@ -17,6 +17,13 @@ export function SearchBox({ municipality, onSelect }: Props) {
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
+    setQuery("");
+    setResults([]);
+    setLoading(false);
+    setHasCompletedSearch(false);
+  }, [municipality]);
+
+  useEffect(() => {
     if (!deferredQuery.trim()) {
       setResults([]);
       setLoading(false);
@@ -58,7 +65,7 @@ export function SearchBox({ municipality, onSelect }: Props) {
       controller.abort();
       clearTimeout(timeout);
     };
-  }, [deferredQuery]);
+  }, [deferredQuery, municipality]);
 
   return (
     <section className="search-box">
